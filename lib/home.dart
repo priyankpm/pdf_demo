@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pdf_demo/compress_pdf.dart';
-import 'package:pdf_demo/view/compress_view.dart';
+import 'package:pdf_demo/view/compress/compress_pdf.dart';
+import 'package:pdf_demo/view/text-pdf/text_pdf.dart';
+import 'package:pdf_demo/view/view/view_pdf.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,7 +19,7 @@ class _HomeState extends State<Home> {
         'icon': Icons.compress,
         'name': 'Compress PDF',
         'desc': 'Reduce file size with quality control',
-        'onTap': () => Get.to(() => const PdfCompressorView()),
+        'onTap': () => Get.to(() => const CompressPdf()),
       },
       {
         'icon': Icons.merge_type,
@@ -26,7 +27,7 @@ class _HomeState extends State<Home> {
         'desc': 'Combine multiple PDFs into one',
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
+          MaterialPageRoute(builder: (_) => const CompressPdf()),
         ),
       },
       {
@@ -35,7 +36,7 @@ class _HomeState extends State<Home> {
         'desc': 'Separate pages from a PDF',
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
+          MaterialPageRoute(builder: (_) => const CompressPdf()),
         ),
       },
       {
@@ -44,7 +45,7 @@ class _HomeState extends State<Home> {
         'desc': 'Protect your PDF with a password',
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
+          MaterialPageRoute(builder: (_) => const CompressPdf()),
         ),
       },
       {
@@ -53,7 +54,7 @@ class _HomeState extends State<Home> {
         'desc': 'Remove password protection',
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
+          MaterialPageRoute(builder: (_) => const CompressPdf()),
         ),
       },
       {
@@ -62,26 +63,20 @@ class _HomeState extends State<Home> {
         'desc': 'Convert images into a single PDF',
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
+          MaterialPageRoute(builder: (_) => const CompressPdf()),
         ),
       },
       {
-        'icon': Icons.picture_as_pdf,
+          'icon': Icons.picture_as_pdf,
         'name': 'View PDF',
         'desc': 'Preview or open your PDF files',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
-        ),
+        'onTap': () => Get.to(() => const ViewPdf()),
       },
       {
         'icon': Icons.text_fields,
         'name': 'Text to PDF',
         'desc': 'Generate PDFs from text documents',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SuperbPdfCompressor()),
-        ),
+        'onTap': () => Get.to(() => const TextToPdf()),
       },
     ];
 

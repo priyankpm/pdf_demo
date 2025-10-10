@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pdf_demo/view/compress/compress_pdf_controller.dart';
 
-import 'compress_controller.dart';
-
-class PdfCompressorView extends StatefulWidget {
-  const PdfCompressorView({super.key});
+class CompressPdf extends StatefulWidget {
+  const CompressPdf({super.key});
 
   @override
-  State<PdfCompressorView> createState() => _PdfCompressorViewState();
+  State<CompressPdf> createState() => _CompressPdfState();
 }
 
-class _PdfCompressorViewState extends State<PdfCompressorView> {
-  final controller = Get.put(CompressorController());
+class _CompressPdfState extends State<CompressPdf> {
+  final controller = Get.put(CompressPdfController());
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +68,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildSelectButton(CompressorController controller) {
+  Widget _buildSelectButton(CompressPdfController controller) {
     return Obx(
       () => ElevatedButton.icon(
         onPressed: controller.isProcessing.value
@@ -87,7 +86,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildSelectedFileSection(CompressorController controller) {
+  Widget _buildSelectedFileSection(CompressPdfController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -110,7 +109,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildFileInfoCard(CompressorController controller) {
+  Widget _buildFileInfoCard(CompressPdfController controller) {
     return Obx(
       () => Card(
         elevation: 2,
@@ -141,7 +140,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildQualityCard(CompressorController controller) {
+  Widget _buildQualityCard(CompressPdfController controller) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -200,7 +199,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildCompressButton(CompressorController controller) {
+  Widget _buildCompressButton(CompressPdfController controller) {
     return Obx(
       () => ElevatedButton.icon(
         onPressed: controller.isProcessing.value
@@ -229,7 +228,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildProcessingIndicator(CompressorController controller) {
+  Widget _buildProcessingIndicator(CompressPdfController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 30),
       child: Obx(
@@ -256,7 +255,7 @@ class _PdfCompressorViewState extends State<PdfCompressorView> {
     );
   }
 
-  Widget _buildResultCard(CompressorController controller) {
+  Widget _buildResultCard(CompressPdfController controller) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Obx(

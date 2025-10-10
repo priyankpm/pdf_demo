@@ -16,7 +16,7 @@ import 'package:image/image.dart' as img;
 
 enum CompressionQuality { normal, medium, best }
 
-class CompressorController extends GetxController {
+class CompressPdfController extends GetxController {
   final Rx<File?> selectedFile = Rx<File?>(null);
   final Rx<File?> compressedFile = Rx<File?>(null);
   final RxInt originalSize = 0.obs;

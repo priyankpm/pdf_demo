@@ -28,6 +28,17 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to import PDF files</string>
+
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>We need access to documents to display PDF files</string>
+
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+
+    <key>UIFileSharingEnabled</key>
+    <true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
