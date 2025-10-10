@@ -205,7 +205,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Superb PDF Compressor'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -220,7 +220,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Icon(Icons.compress, size: 48, color: Colors.blue),
+                      Icon(Icons.compress, size: 48, color: Colors.teal),
                       const SizedBox(height: 12),
                       const Text(
                         'PDF Compressor',
@@ -249,7 +249,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                     horizontal: 24,
                     vertical: 16,
                   ),
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
                   textStyle: const TextStyle(fontSize: 16),
                 ),
@@ -258,7 +258,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
               if (selectedFile != null) ...[
                 Card(
                   elevation: 2,
-                  color: Colors.blue[50],
+                  color: Colors.teal[50],
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -266,7 +266,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.picture_as_pdf, color: Colors.blue[700]),
+                            Icon(Icons.picture_as_pdf, color: Colors.teal[700]),
                             const SizedBox(width: 8),
                             const Text(
                               "Selected File",
@@ -317,6 +317,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                           child: Column(
                             children: [
                               RadioListTile<String>(
+                                activeColor: Colors.teal,
                                 value: 'Normal',
                                 title: const Text('Normal Quality'),
                                 subtitle: const Text(
@@ -326,6 +327,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                                 contentPadding: EdgeInsets.zero,
                               ),
                               RadioListTile<String>(
+                                activeColor: Colors.teal,
                                 value: 'Medium',
                                 title: const Text('Medium Quality'),
                                 subtitle: const Text(
@@ -335,6 +337,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                                 contentPadding: EdgeInsets.zero,
                               ),
                               RadioListTile<String>(
+                                activeColor: Colors.teal,
                                 value: 'Best',
                                 title: const Text('Maximum Compression'),
                                 subtitle: const Text(
@@ -351,31 +354,35 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: processing ? null : _superCompressPdf,
-                    icon: processing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.compress, size: 24),
-                    label: Text(
-                      processing ? 'Compressing...' : 'Compress PDF',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+
+                ElevatedButton.icon(
+                  onPressed: processing ? null : _superCompressPdf,
+                  icon: processing
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                  )
+                      : const Icon(Icons.compress, size: 24),
+                  label: Text(
+                    processing ? 'Compressing...' : 'Compress PDF',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(fontSize: 16),
                   ),
                 ),
               ],
@@ -407,7 +414,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                 const SizedBox(height: 20),
                 Card(
                   elevation: 4,
-                  color: Colors.green[50],
+                  color: Colors.teal[50],
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -417,7 +424,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                           children: [
                             Icon(
                               Icons.check_circle,
-                              color: Colors.green[700],
+                              color: Colors.teal[700],
                               size: 28,
                             ),
                             const SizedBox(width: 12),
@@ -426,7 +433,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: Colors.green,
+                                color: Colors.teal,
                               ),
                             ),
                           ],
@@ -446,7 +453,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                               child: _buildStatCard(
                                 'Original',
                                 _formatSize(originalSize!),
-                                Colors.blue,
+                                Colors.teal,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -454,7 +461,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                               child: _buildStatCard(
                                 'Compressed',
                                 _formatSize(compressedSize!),
-                                Colors.green,
+                                Colors.teal,
                               ),
                             ),
                           ],
@@ -463,7 +470,7 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.green[100],
+                            color: Colors.teal[100],
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -471,13 +478,13 @@ class _SuperbPdfCompressorState extends State<SuperbPdfCompressor> {
                             children: [
                               Icon(
                                 Icons.trending_down,
-                                color: Colors.green[900],
+                                color: Colors.teal[900],
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 "Saved: ${_savedPercent().toStringAsFixed(1)}%",
                                 style: TextStyle(
-                                  color: Colors.green[900],
+                                  color: Colors.teal[900],
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20,
                                 ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pdf_demo/home.dart';
-import 'package:pdf_demo/view/compress/compress_binding.dart';
-import 'package:pdf_demo/view/compress/compress_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +13,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'PDF',
-      initialBinding: CompressorBinding(),
       home: const Home(),
       debugShowCheckedModeBanner: false,
     );
