@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pdf_demo/view/compress/compress_pdf.dart';
+import 'package:pdf_demo/view/image-pdf/image_pdf.dart';
+import 'package:pdf_demo/view/split-pdf/split_pdf.dart';
 import 'package:pdf_demo/view/text-pdf/text_pdf.dart';
 import 'package:pdf_demo/view/view/view_pdf.dart';
+import 'view/lock-pdf/lock_pdf.dart';
+import 'view/merge-pdf/merge_pdf.dart';
+import 'view/resize-pdf/resize_pdf.dart';
+import 'view/rotate-pdf/rotate_pdf.dart';
+import 'view/unlock-pdf/unlock_pdf.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -25,49 +32,34 @@ class _HomeState extends State<Home> {
         'icon': Icons.merge_type,
         'name': 'Merge PDFs',
         'desc': 'Combine multiple PDFs into one',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CompressPdf()),
-        ),
+        'onTap': () => Get.to(() => const MergePdf()),
       },
       {
         'icon': Icons.call_split,
         'name': 'Split PDF',
         'desc': 'Separate pages from a PDF',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CompressPdf()),
-        ),
+        'onTap': () => Get.to(() => const SplitPdf()),
       },
       {
         'icon': Icons.lock,
         'name': 'Lock PDF',
         'desc': 'Protect your PDF with a password',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CompressPdf()),
-        ),
+        'onTap': () => Get.to(() => const LockPdf()),
       },
       {
         'icon': Icons.lock_open,
         'name': 'Unlock PDF',
         'desc': 'Remove password protection',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CompressPdf()),
-        ),
+        'onTap': () => Get.to(() => const UnlockPdf()),
       },
       {
         'icon': Icons.image,
         'name': 'Image to PDF',
         'desc': 'Convert images into a single PDF',
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CompressPdf()),
-        ),
+        'onTap': () => Get.to(() => const ImageToPdf()),
       },
       {
-          'icon': Icons.picture_as_pdf,
+        'icon': Icons.picture_as_pdf,
         'name': 'View PDF',
         'desc': 'Preview or open your PDF files',
         'onTap': () => Get.to(() => const ViewPdf()),
@@ -78,6 +70,60 @@ class _HomeState extends State<Home> {
         'desc': 'Generate PDFs from text documents',
         'onTap': () => Get.to(() => const TextToPdf()),
       },
+      {
+        'icon': Icons.photo_size_select_small_sharp,
+        'name': 'Resize PDF',
+        'desc': 'Convert PDF to different paper sizes',
+        'onTap': () => Get.to(() => const ResizePdf()),
+      },
+      {
+        'icon': Icons.rotate_right,
+        'name': 'Rotate PDF',
+        'desc': 'Rotate pages clockwise or counterclockwise',
+        'onTap': () => Get.to(() => const RotatePdf()),
+      },
+      // {
+      //   'icon': Icons.reorder,
+      //   'name': 'Reorder Pages',
+      //   'desc': 'Rearrange PDF pages in custom order',
+      //   'onTap': () => Get.to(() => const ReorderPages()),
+      // },
+      // {
+      //   'icon': Icons.delete_outline,
+      //   'name': 'Delete Pages',
+      //   'desc': 'Remove specific pages from PDF',
+      //   'onTap': () => Get.to(() => const DeletePdf()),
+      // },
+      // {
+      //   'icon': Icons.branding_watermark,
+      //   'name': 'Add Watermark',
+      //   'desc': 'Add text or image watermark to PDF',
+      //   'onTap': () => Get.to(() => const AddWatermark()),
+      // },
+      // {
+      //   'icon': Icons.format_list_numbered,
+      //   'name': 'Add Page Numbers',
+      //   'desc': 'Insert page numbers with custom format',
+      //   'onTap': () => Get.to(() => const AddPageNumbers()),
+      // },
+      // {
+      //   'icon': Icons.image_search,
+      //   'name': 'Extract Images',
+      //   'desc': 'Export all images from PDF',
+      //   'onTap': () => Get.to(() => const ExtractImages()),
+      // },
+      // {
+      //   'icon': Icons.text_snippet,
+      //   'name': 'Extract Text',
+      //   'desc': 'Copy all text content from PDF',
+      //   'onTap': () => Get.to(() => const ExtractText()),
+      // },
+      // {
+      //   'icon': Icons.content_copy,
+      //   'name': 'Remove Duplicates',
+      //   'desc': 'Delete duplicate pages automatically',
+      //   'onTap': () => Get.to(() => const RemoveDuplicates()),
+      // },
     ];
 
     return Scaffold(
