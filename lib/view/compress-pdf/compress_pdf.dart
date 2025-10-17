@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pdf_demo/view/compress/compress_pdf_controller.dart';
+import 'package:pdf_demo/view/compress-pdf/compress_pdf_controller.dart';
 
 class CompressPdf extends StatefulWidget {
   const CompressPdf({super.key});

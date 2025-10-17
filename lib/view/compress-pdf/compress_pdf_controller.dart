@@ -129,7 +129,7 @@ class CompressPdfController extends GetxController {
         );
 
         if (compressedImageBytes == null) {
-          log('Failed to compress page $pageCount');
+          log('Failed to compress-pdf page $pageCount');
           continue;
         }
 

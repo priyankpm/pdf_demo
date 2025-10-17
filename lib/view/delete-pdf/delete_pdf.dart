@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pdf_demo/view/rotate-pdf/rotate_pdf_controller.dart';
+import 'package:pdf_demo/view/delete-pdf/delete_pdf_controller.dart';
 
-class RotatePdf extends StatefulWidget {
-  const RotatePdf({super.key});
+class DeletePdf extends StatefulWidget {
+  const DeletePdf({super.key});
 
   @override
-  State<RotatePdf> createState() => _RotatePdfState();
+  State<DeletePdf> createState() => _DeletePdfState();
 }
 
-class _RotatePdfState extends State<RotatePdf> {
-  final controller = Get.put(RotatePdfController());
+class _DeletePdfState extends State<DeletePdf> {
+  final controller = Get.put(DeletePdfController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Rotate PDF'),
-        backgroundColor: Colors.teal,
+        title: const Text('Delete PDF Pages'),
+        backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
       ),
       body: Obx(() {
@@ -38,7 +38,7 @@ class _RotatePdfState extends State<RotatePdf> {
                 _buildSelectButton(controller),
                 const SizedBox(height: 20),
                 Obx(
-                      () => controller.hasSelectedFile
+                  () => controller.hasSelectedFile
                       ? _buildSelectedFileSection(controller)
                       : _buildEmptyState(),
                 ),
@@ -52,9 +52,9 @@ class _RotatePdfState extends State<RotatePdf> {
 
   // Build full-screen page view
   Widget _buildPageViewDialog(
-      BuildContext context,
-      RotatePdfController controller,
-      ) {
+    BuildContext context,
+    DeletePdfController controller,
+  ) {
     final pageIndex = controller.viewingPageIndex.value;
     final pageNumber = pageIndex + 1;
 
@@ -84,15 +84,16 @@ class _RotatePdfState extends State<RotatePdf> {
         Expanded(
           child: Container(
             color: Colors.grey[200],
-            child: controller.pageImages.isNotEmpty &&
-                pageIndex < controller.pageImages.length &&
-                controller.pageImages[pageIndex] != null
+            child:
+                controller.pageImages.isNotEmpty &&
+                    pageIndex < controller.pageImages.length &&
+                    controller.pageImages[pageIndex] != null
                 ? Center(
-              child: Image.memory(
-                controller.pageImages[pageIndex]!,
-                fit: BoxFit.contain,
-              ),
-            )
+                    child: Image.memory(
+                      controller.pageImages[pageIndex]!,
+                      fit: BoxFit.contain,
+                    ),
+                  )
                 : const Center(child: CircularProgressIndicator()),
           ),
         ),
@@ -107,15 +108,15 @@ class _RotatePdfState extends State<RotatePdf> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Icon(Icons.rotate_right, size: 48, color: Colors.teal),
+            const Icon(Icons.delete_sweep, size: 48, color: Colors.deepOrange),
             const SizedBox(height: 12),
             const Text(
-              'Rotate PDF Pages',
+              'PDF Page Remover',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Rotate pages clockwise or counterclockwise',
+              'Select and remove unwanted pages from your PDF',
               style: TextStyle(color: Colors.grey[600], fontSize: 14),
               textAlign: TextAlign.center,
             ),
@@ -125,19 +126,18 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildSelectButton(RotatePdfController controller) {
+  Widget _buildSelectButton(DeletePdfController controller) {
     return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value || controller.isLoadingPages.value
+      () => ElevatedButton.icon(
+        onPressed:
+            controller.isProcessing.value || controller.isLoadingPages.value
             ? null
             : controller.pickPdfFile,
-        icon: const Icon(Icons.upload_file),
-        label: Text(
-          controller.hasSelectedFile ? 'Change PDF File' : 'Select PDF File',
-        ),
+        icon: const Icon(Icons.folder_open),
+        label: const Text('Select PDF File'),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.teal,
+          backgroundColor: Colors.deepOrange,
           foregroundColor: Colors.white,
           textStyle: const TextStyle(fontSize: 16),
         ),
@@ -145,48 +145,35 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildSelectedFileSection(RotatePdfController controller) {
+  Widget _buildSelectedFileSection(DeletePdfController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildFileInfoCard(controller),
         const SizedBox(height: 20),
-        _buildRotationOptionsCard(controller),
-        const SizedBox(height: 20),
-
-        // Show page grid when in specific mode
         Obx(() {
-          if (controller.rotateMode.value == RotateMode.specific) {
-            if (controller.isLoadingPages.value) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: _buildLoadingIndicator(controller),
-              );
-            } else if (controller.pageImages.isNotEmpty) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: _buildPagesGrid(controller),
-              );
-            }
+          if (controller.isLoadingPages.value) {
+            return _buildLoadingIndicator(controller);
+          }
+          return _buildPagesGrid(controller);
+        }),
+        const SizedBox(height: 20),
+        Obx(() {
+          if (controller.isDeletionComplete.value) {
+            return _buildResetButton(controller);
+          } else if (!controller.isLoadingPages.value &&
+              controller.pageImages.isNotEmpty) {
+            return _buildDeleteButton(controller);
           }
           return const SizedBox.shrink();
         }),
-
-        // Show Reset button if rotation is complete, otherwise show Rotate button
-        Obx(() {
-          if (controller.isRotationComplete.value) {
-            return _buildResetButton(controller);
-          } else {
-            return _buildRotateButton(controller);
-          }
-        }),
         Obx(
-              () => controller.isProcessing.value
+          () => controller.isProcessing.value
               ? _buildProcessingIndicator(controller)
               : const SizedBox.shrink(),
         ),
         Obx(
-              () => controller.rotatedFile.value != null
+          () => controller.hasProcessedFile
               ? _buildResultCard(controller)
               : const SizedBox.shrink(),
         ),
@@ -194,10 +181,11 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildFileInfoCard(RotatePdfController controller) {
+  Widget _buildFileInfoCard(DeletePdfController controller) {
     return Obx(
-          () => Card(
+      () => Card(
         elevation: 2,
+        color: Colors.deepOrange[50],
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -205,7 +193,7 @@ class _RotatePdfState extends State<RotatePdf> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.picture_as_pdf, color: Colors.teal[700]),
+                  Icon(Icons.picture_as_pdf, color: Colors.deepOrange[700]),
                   const SizedBox(width: 8),
                   const Text(
                     "Selected File",
@@ -214,11 +202,20 @@ class _RotatePdfState extends State<RotatePdf> {
                 ],
               ),
               const Divider(height: 20),
-              _buildInfoRow('File Name', controller.fileName),
+              _buildInfoRow('Filename', controller.selectedFileName),
               const SizedBox(height: 8),
-              _buildInfoRow('File Size', controller.fileSize),
-              const SizedBox(height: 8),
-              _buildInfoRow('Total Pages', '${controller.totalPages} pages'),
+              _buildInfoRow('Original Size', controller.formattedOriginalSize),
+              if (controller.totalPages.value > 0) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow('Total Pages', controller.totalPages.toString()),
+              ],
+              if (controller.selectedPagesToDelete.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  'Selected for Deletion',
+                  '${controller.selectedPagesToDelete.length} page(s)',
+                ),
+              ],
             ],
           ),
         ),
@@ -226,85 +223,17 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildRotationOptionsCard(RotatePdfController controller) {
-    return Obx(
-          () => Card(
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.settings, color: Colors.teal[700]),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Rotation Options",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-              const Divider(height: 20),
-              const Text(
-                'Rotation Angle',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAngleButton(
-                      controller, 90, Icons.rotate_90_degrees_ccw, '90° Right'),
-                  _buildAngleButton(controller, 180, Icons.rotate_left, '180°'),
-                  _buildAngleButton(
-                      controller, 270, Icons.rotate_90_degrees_cw, '270° Left'),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Apply To',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              RadioListTile<RotateMode>(
-                title: const Text('All Pages'),
-                subtitle: const Text('Rotate all pages in the PDF'),
-                value: RotateMode.all,
-                groupValue: controller.rotateMode.value,
-                onChanged: controller.isProcessing.value || controller.isLoadingPages.value
-                    ? null
-                    : (value) => controller.setRotateMode(value!),
-                activeColor: Colors.teal,
-              ),
-              RadioListTile<RotateMode>(
-                title: const Text('Specific Pages'),
-                subtitle: const Text('Select specific pages to rotate'),
-                value: RotateMode.specific,
-                groupValue: controller.rotateMode.value,
-                onChanged: controller.isProcessing.value || controller.isLoadingPages.value
-                    ? null
-                    : (value) => controller.setRotateMode(value!),
-                activeColor: Colors.teal,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingIndicator(RotatePdfController controller) {
+  Widget _buildLoadingIndicator(DeletePdfController controller) {
     return Card(
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
           children: [
-            const CircularProgressIndicator(color: Colors.teal),
+            const CircularProgressIndicator(color: Colors.deepOrange),
             const SizedBox(height: 20),
             Obx(
-                  () => Text(
+              () => Text(
                 controller.processingStatus.value,
                 style: const TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
@@ -316,7 +245,7 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildPagesGrid(RotatePdfController controller) {
+  Widget _buildPagesGrid(DeletePdfController controller) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -328,17 +257,18 @@ class _RotatePdfState extends State<RotatePdf> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Select Pages to Rotate",
+                  "Select Pages to Delete",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Obx(() {
-                  if (controller.selectedPagesToRotate.isNotEmpty) {
+                  if (controller.selectedPagesToDelete.isNotEmpty &&
+                      !controller.isDeletionComplete.value) {
                     return TextButton.icon(
                       onPressed: controller.clearSelection,
                       icon: const Icon(Icons.clear_all, size: 18),
                       label: const Text('Clear'),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.teal,
+                        foregroundColor: Colors.deepOrange,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     );
@@ -349,34 +279,26 @@ class _RotatePdfState extends State<RotatePdf> {
             ),
             const SizedBox(height: 12),
             Obx(
-                  () => controller.isRotationComplete.value
+              () => controller.isDeletionComplete.value
                   ? Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  'Processing complete. Press "Reset" to process another PDF',
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-                  : controller.selectedPagesToRotate.isNotEmpty
-                  ? Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  '${controller.selectedPagesToRotate.length} page(s) selected for rotation',
-                  style: TextStyle(
-                    color: Colors.teal[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-                  : const SizedBox(),
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        'Processing complete. Press "Reset" to process another PDF',
+                        style: TextStyle(
+                          color: controller.isDeletionComplete.value
+                              ? Colors.green[700]
+                              : Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: controller.isDeletionComplete.value
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    )
+                  : SizedBox(),
             ),
             Obx(
-                  () => GridView.builder(
+              () => GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -397,11 +319,11 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildPageCard(int index, RotatePdfController controller) {
+  Widget _buildPageCard(int index, DeletePdfController controller) {
     final pageNumber = index + 1;
     return Obx(() {
-      final isSelected = controller.selectedPagesToRotate.contains(pageNumber);
-      final isRotationComplete = controller.isRotationComplete.value;
+      final isSelected = controller.selectedPagesToDelete.contains(pageNumber);
+      final isDeletionComplete = controller.isDeletionComplete.value;
 
       return GestureDetector(
         onTap: () => controller.togglePageSelection(pageNumber),
@@ -410,13 +332,13 @@ class _RotatePdfState extends State<RotatePdf> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? Colors.teal : Colors.grey[300]!,
+              color: isSelected ? Colors.red : Colors.grey[300]!,
               width: isSelected ? 2.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? Colors.teal.withValues(alpha: 0.3)
+                    ? Colors.red.withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.05),
                 blurRadius: isSelected ? 6 : 2,
                 offset: const Offset(0, 2),
@@ -434,34 +356,31 @@ class _RotatePdfState extends State<RotatePdf> {
                         color: Colors.grey[100],
                         child: controller.pageImages[index] != null
                             ? Stack(
-                          children: [
-                            Image.memory(
-                              controller.pageImages[index]!,
-                              fit: BoxFit.contain,
-                              width: double.infinity,
-                            ),
-                            if (isRotationComplete)
-                              Container(
-                                color: Colors.black.withValues(
-                                  alpha: 0.1,
+                                children: [
+                                  Image.memory(
+                                    controller.pageImages[index]!,
+                                    fit: BoxFit.contain,
+                                    width: double.infinity,
+                                  ),
+                                  if (isDeletionComplete)
+                                    Container(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                    ),
+                                ],
+                              )
+                            : const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
                               ),
-                          ],
-                        )
-                            : const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 12,vertical: 5),
                       width: double.infinity,
-                      color: isSelected ? Colors.teal[50] : Colors.white,
+                      color: isSelected ? Colors.red[50] : Colors.white,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -471,18 +390,14 @@ class _RotatePdfState extends State<RotatePdf> {
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
                               color: isSelected
-                                  ? Colors.teal[700]
+                                  ? Colors.red[700]
                                   : Colors.black87,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           GestureDetector(
                             onTap: () => controller.viewSinglePage(index),
-                            child: Icon(
-                              Icons.remove_red_eye,
-                              size: 18,
-                              color: isSelected ? Colors.teal[700] : Colors.grey[700],
-                            ),
+                            child: Icon(Icons.remove_red_eye, size: 18),
                           ),
                         ],
                       ),
@@ -490,6 +405,7 @@ class _RotatePdfState extends State<RotatePdf> {
                   ],
                 ),
               ),
+
               if (isSelected)
                 Positioned(
                   top: 4,
@@ -497,7 +413,7 @@ class _RotatePdfState extends State<RotatePdf> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.teal,
+                      color: Colors.red,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -507,13 +423,13 @@ class _RotatePdfState extends State<RotatePdf> {
                       ],
                     ),
                     child: const Icon(
-                      Icons.rotate_right,
+                      Icons.delete,
                       color: Colors.white,
                       size: 14,
                     ),
                   ),
                 ),
-              if (isRotationComplete)
+              if (isDeletionComplete)
                 Positioned(
                   top: 4,
                   left: 4,
@@ -543,94 +459,40 @@ class _RotatePdfState extends State<RotatePdf> {
     });
   }
 
-  Widget _buildAngleButton(
-      RotatePdfController controller, int angle, IconData icon, String label) {
+  Widget _buildDeleteButton(DeletePdfController controller) {
     return Obx(
-          () => GestureDetector(
-        onTap: controller.isProcessing.value
+      () => ElevatedButton.icon(
+        onPressed:
+            controller.isProcessing.value ||
+                controller.selectedPagesToDelete.isEmpty
             ? null
-            : () => controller.setRotationAngle(angle),
-        child: Container(
-          width: 100,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: controller.rotationAngle.value == angle
-                ? Colors.teal
-                : Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: controller.rotationAngle.value == angle
-                  ? Colors.teal
-                  : Colors.grey[400]!,
-              width: 2,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 36,
-                color: controller.rotationAngle.value == angle
-                    ? Colors.white
-                    : Colors.grey[700],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: controller.rotationAngle.value == angle
-                      ? Colors.white
-                      : Colors.grey[700],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRotateButton(RotatePdfController controller) {
-    return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value ||
-            !controller.hasSelectedFile ||
-            (controller.rotateMode.value == RotateMode.specific &&
-                controller.selectedPagesToRotate.isEmpty)
-            ? null
-            : controller.rotatePdf,
+            : controller.deletePdfPages,
         icon: controller.isProcessing.value
             ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
-            : const Icon(Icons.rotate_right, size: 24),
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.delete, size: 24),
         label: Text(
           controller.isProcessing.value
-              ? 'Rotating...'
-              : controller.rotateMode.value == RotateMode.specific &&
-              controller.selectedPagesToRotate.isNotEmpty
-              ? 'Rotate Selected Pages (${controller.selectedPagesToRotate.length})'
-              : 'Rotate PDF',
+              ? 'Deleting Pages...'
+              : 'Delete Selected Pages (${controller.selectedPagesToDelete.length})',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.teal,
+          backgroundColor: Colors.deepOrange,
           foregroundColor: Colors.white,
         ),
       ),
     );
   }
 
-  Widget _buildResetButton(RotatePdfController controller) {
+  Widget _buildResetButton(DeletePdfController controller) {
     return ElevatedButton.icon(
       onPressed: controller.resetForNewFile,
       icon: const Icon(Icons.refresh, size: 24),
@@ -646,15 +508,13 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildProcessingIndicator(RotatePdfController controller) {
+  Widget _buildProcessingIndicator(DeletePdfController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 30),
       child: Obx(
-            () => Center(
+        () => Center(
           child: Column(
             children: [
-              const CircularProgressIndicator(color: Colors.teal),
-              const SizedBox(height: 16),
               Text(
                 controller.processingStatus.value,
                 style: const TextStyle(
@@ -665,7 +525,7 @@ class _RotatePdfState extends State<RotatePdf> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Rotating PDF pages...',
+                'Please wait, this may take a while...',
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
@@ -675,13 +535,13 @@ class _RotatePdfState extends State<RotatePdf> {
     );
   }
 
-  Widget _buildResultCard(RotatePdfController controller) {
+  Widget _buildResultCard(DeletePdfController controller) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Obx(
-            () => Card(
+        () => Card(
           elevation: 4,
-          color: Colors.teal[50],
+          color: Colors.green[50],
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -689,25 +549,53 @@ class _RotatePdfState extends State<RotatePdf> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.teal[700], size: 28),
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green[700],
+                      size: 28,
+                    ),
                     const SizedBox(width: 12),
                     const Text(
-                      "PDF Rotated Successfully!",
+                      "Pages Deleted Successfully!",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Colors.teal,
+                        color: Colors.green,
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 24),
-                _buildInfoRow('Pages Rotated',
-                    '${controller.pagesRotated} page${controller.pagesRotated > 1 ? 's' : ''}'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Rotation Angle',
-                    '${controller.rotationAngle.value}°'),
+                _buildInfoRow('Output File', controller.processedFileName),
                 const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Original Pages',
+                        controller.totalPages.toString(),
+                        Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Deleted',
+                        controller.deletedPagesCount.toString(),
+                        Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Remaining',
+                        controller.remainingPages.toString(),
+                        Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -726,7 +614,7 @@ class _RotatePdfState extends State<RotatePdf> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        controller.rotatedFile.value?.path ?? '',
+                        controller.processedFilePath,
                         style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                       ),
                     ],
@@ -772,7 +660,7 @@ class _RotatePdfState extends State<RotatePdf> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 130,
+          width: 140,
           child: Text(
             '$label:',
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -780,6 +668,39 @@ class _RotatePdfState extends State<RotatePdf> {
         ),
         Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
       ],
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

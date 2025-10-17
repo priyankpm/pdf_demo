@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pdf_demo/view/compress/compress_pdf.dart';
+import 'package:pdf_demo/view/compress-pdf/compress_pdf.dart';
+import 'package:pdf_demo/view/delete-pdf/delete_pdf.dart';
 import 'package:pdf_demo/view/image-pdf/image_pdf.dart';
+import 'package:pdf_demo/view/reordr-pdf/reorder_pdf.dart';
 import 'package:pdf_demo/view/split-pdf/split_pdf.dart';
 import 'package:pdf_demo/view/text-pdf/text_pdf.dart';
-import 'package:pdf_demo/view/view/view_pdf.dart';
+import 'package:pdf_demo/view/view-pdf/view_pdf.dart';
+import 'view/extractimage-pdf/extract_image_pdf.dart';
 import 'view/lock-pdf/lock_pdf.dart';
 import 'view/merge-pdf/merge_pdf.dart';
 import 'view/resize-pdf/resize_pdf.dart';
@@ -82,30 +85,18 @@ class _HomeState extends State<Home> {
         'desc': 'Rotate pages clockwise or counterclockwise',
         'onTap': () => Get.to(() => const RotatePdf()),
       },
-      // {
-      //   'icon': Icons.reorder,
-      //   'name': 'Reorder Pages',
-      //   'desc': 'Rearrange PDF pages in custom order',
-      //   'onTap': () => Get.to(() => const ReorderPages()),
-      // },
-      // {
-      //   'icon': Icons.delete_outline,
-      //   'name': 'Delete Pages',
-      //   'desc': 'Remove specific pages from PDF',
-      //   'onTap': () => Get.to(() => const DeletePdf()),
-      // },
-      // {
-      //   'icon': Icons.branding_watermark,
-      //   'name': 'Add Watermark',
-      //   'desc': 'Add text or image watermark to PDF',
-      //   'onTap': () => Get.to(() => const AddWatermark()),
-      // },
-      // {
-      //   'icon': Icons.format_list_numbered,
-      //   'name': 'Add Page Numbers',
-      //   'desc': 'Insert page numbers with custom format',
-      //   'onTap': () => Get.to(() => const AddPageNumbers()),
-      // },
+      {
+        'icon': Icons.reorder,
+        'name': 'Reorder Pages',
+        'desc': 'Rearrange PDF pages in custom order',
+        'onTap': () => Get.to(() => const ReorderPdf()),
+      },
+      {
+        'icon': Icons.delete_outline,
+        'name': 'Delete Pages',
+        'desc': 'Remove specific pages from PDF',
+        'onTap': () => Get.to(() => const DeletePdf()),
+      },
       // {
       //   'icon': Icons.image_search,
       //   'name': 'Extract Images',
@@ -117,12 +108,6 @@ class _HomeState extends State<Home> {
       //   'name': 'Extract Text',
       //   'desc': 'Copy all text content from PDF',
       //   'onTap': () => Get.to(() => const ExtractText()),
-      // },
-      // {
-      //   'icon': Icons.content_copy,
-      //   'name': 'Remove Duplicates',
-      //   'desc': 'Delete duplicate pages automatically',
-      //   'onTap': () => Get.to(() => const RemoveDuplicates()),
       // },
     ];
 

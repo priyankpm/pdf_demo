@@ -24,6 +24,7 @@ dependencies:
   flutter_quill: ^11.4.2
   reorderable_grid_view: ^2.2.8
   pdf_render: ^1.4.12
+  
 
 dev_dependencies:
   flutter_test:

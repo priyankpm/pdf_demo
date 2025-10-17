@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:printing/printing.dart';
 
 enum RotateMode { all, specific }
 
@@ -12,13 +15,21 @@ class RotatePdfController extends GetxController {
   final Rx<File?> selectedFile = Rx<File?>(null);
   final Rx<File?> rotatedFile = Rx<File?>(null);
   final RxBool isProcessing = false.obs;
+  final RxBool isLoadingPages = false.obs;
   final RxString processingStatus = ''.obs;
   final RxInt totalPages = 0.obs;
   final RxInt rotationAngle = 90.obs;
   final Rx<RotateMode> rotateMode = RotateMode.all.obs;
+  final RxList<Uint8List?> pageImages = <Uint8List?>[].obs;
+  final RxSet<int> selectedPagesToRotate = <int>{}.obs;
+  final RxInt viewingPageIndex = (-1).obs;
+  final RxBool isRotationComplete = false.obs;
 
   final pageRangeController = TextEditingController(text: '1-3');
 
+  Timer? _statusUpdateTimer;
+  String _pendingStatus = '';
+  Uint8List? _originalPdfBytes;
   int pagesRotated = 0;
 
   String get fileName =>
@@ -26,6 +37,7 @@ class RotatePdfController extends GetxController {
   String get fileSize => _formatSize(selectedFile.value?.lengthSync() ?? 0);
 
   bool get hasSelectedFile => selectedFile.value != null;
+  bool get canSelectPages => !isRotationComplete.value;
 
   Future<void> pickPdfFile() async {
     try {
@@ -42,6 +54,11 @@ class RotatePdfController extends GetxController {
           selectedFile.value = file;
           await _loadPdfInfo(file);
           rotatedFile.value = null;
+
+          // Load page previews if in specific mode
+          if (rotateMode.value == RotateMode.specific) {
+            await _loadPdfPages(file);
+          }
         }
       }
     } catch (e) {
@@ -61,18 +78,109 @@ class RotatePdfController extends GetxController {
     }
   }
 
+  Future<void> _loadPdfPages(File file) async {
+    try {
+      isLoadingPages.value = true;
+      processingStatus.value = 'Loading PDF pages...';
+      pageImages.clear();
+
+      _originalPdfBytes = await file.readAsBytes();
+
+      int pageCount = 0;
+      final pages = <Uint8List?>[];
+
+      await for (final page in Printing.raster(_originalPdfBytes!, dpi: 72)) {
+        pageCount++;
+        _updateStatus('Loading page $pageCount...');
+
+        final imageBytes = await page.toPng();
+        pages.add(imageBytes);
+
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      pageImages.value = pages;
+    } catch (e) {
+      _showToast('Error loading PDF', e);
+      pageImages.clear();
+    } finally {
+      isLoadingPages.value = false;
+      processingStatus.value = '';
+      _statusUpdateTimer?.cancel();
+    }
+  }
+
+  void _updateStatus(String status) {
+    _pendingStatus = status;
+
+    if (_statusUpdateTimer?.isActive ?? false) return;
+
+    _statusUpdateTimer = Timer(const Duration(milliseconds: 200), () {
+      processingStatus.value = _pendingStatus;
+    });
+  }
+
   void setRotationAngle(int angle) {
     rotationAngle.value = angle;
   }
 
-  void setRotateMode(RotateMode mode) {
+  Future<void> setRotateMode(RotateMode mode) async {
     rotateMode.value = mode;
     rotatedFile.value = null;
+    selectedPagesToRotate.clear();
+    isRotationComplete.value = false;
+
+    // Load page previews when switching to specific mode
+    if (mode == RotateMode.specific && selectedFile.value != null && pageImages.isEmpty) {
+      await _loadPdfPages(selectedFile.value!);
+    }
+  }
+
+  void togglePageSelection(int pageNumber) {
+    if (isRotationComplete.value) {
+      _showToast(
+        'Processing Complete',
+        'Please press "Reset" to process another PDF',
+      );
+      return;
+    }
+
+    if (selectedPagesToRotate.contains(pageNumber)) {
+      selectedPagesToRotate.remove(pageNumber);
+    } else {
+      selectedPagesToRotate.add(pageNumber);
+    }
+  }
+
+  void clearSelection() {
+    if (isRotationComplete.value) {
+      _showToast(
+        'Processing Complete',
+        'Please press "Reset" to process another PDF',
+      );
+      return;
+    }
+    selectedPagesToRotate.clear();
+  }
+
+  // View a single page
+  void viewSinglePage(int pageIndex) {
+    viewingPageIndex.value = pageIndex;
+  }
+
+  // Close single page view
+  void closeSinglePageView() {
+    viewingPageIndex.value = -1;
   }
 
   Future<void> rotatePdf() async {
     if (selectedFile.value == null) {
       _showToast('No File', 'Please select a PDF file');
+      return;
+    }
+
+    if (rotateMode.value == RotateMode.specific && selectedPagesToRotate.isEmpty) {
+      _showToast('No Pages Selected', 'Please select pages to rotate');
       return;
     }
 
@@ -90,11 +198,8 @@ class RotatePdfController extends GetxController {
       if (rotateMode.value == RotateMode.all) {
         pagesToRotate = List.generate(document.pages.count, (i) => i);
       } else {
-        final ranges = _parsePageRanges(pageRangeController.text);
-        if (ranges.isEmpty) {
-          throw Exception('Invalid page range format');
-        }
-        for (var page in ranges) {
+        // Use selected pages from visual selection
+        for (var page in selectedPagesToRotate) {
           if (page > 0 && page <= document.pages.count) {
             pagesToRotate.add(page - 1);
           }
@@ -140,6 +245,8 @@ class RotatePdfController extends GetxController {
 
       document.dispose();
 
+      isRotationComplete.value = true;
+
       _showToast('Success',
           'Successfully rotated $pagesRotated page${pagesRotated > 1 ? 's' : ''}');
     } catch (e) {
@@ -148,39 +255,6 @@ class RotatePdfController extends GetxController {
       isProcessing.value = false;
       processingStatus.value = '';
     }
-  }
-
-  List<int> _parsePageRanges(String input) {
-    final List<int> pages = [];
-
-    try {
-      final parts = input.split(',');
-
-      for (var part in parts) {
-        part = part.trim();
-
-        if (part.contains('-')) {
-          final range = part.split('-');
-          if (range.length == 2) {
-            final start = int.parse(range[0].trim());
-            final end = int.parse(range[1].trim());
-
-            if (start <= end && start > 0) {
-              pages.addAll(List.generate(end - start + 1, (i) => start + i));
-            }
-          }
-        } else {
-          final page = int.parse(part);
-          if (page > 0) {
-            pages.add(page);
-          }
-        }
-      }
-    } catch (e) {
-      return [];
-    }
-
-    return pages.toSet().toList()..sort();
   }
 
   Future<File> _savePdf(PdfDocument document) async {
@@ -195,6 +269,27 @@ class RotatePdfController extends GetxController {
     await outputFile.writeAsBytes(pdfBytes);
 
     return outputFile;
+  }
+
+  void resetForNewFile() {
+    _resetAll();
+  }
+
+  void _resetAll() {
+    selectedFile.value = null;
+    rotatedFile.value = null;
+    totalPages.value = 0;
+    pageImages.clear();
+    selectedPagesToRotate.clear();
+    isLoadingPages.value = false;
+    isProcessing.value = false;
+    processingStatus.value = '';
+    isRotationComplete.value = false;
+    viewingPageIndex.value = -1;
+    rotationAngle.value = 90;
+    rotateMode.value = RotateMode.all;
+    pagesRotated = 0;
+    _originalPdfBytes = null;
   }
 
   void _showToast(String title, dynamic error) => Get.snackbar(
@@ -218,6 +313,7 @@ class RotatePdfController extends GetxController {
   @override
   void onClose() {
     pageRangeController.dispose();
+    _statusUpdateTimer?.cancel();
     super.onClose();
   }
 }

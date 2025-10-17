@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pdf_demo/view/view/view_pdf_controller.dart';
+import 'package:pdf_demo/view/view-pdf/view_pdf_controller.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ViewPdf extends StatefulWidget {
