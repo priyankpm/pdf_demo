@@ -7,7 +7,7 @@ import 'package:pdf_demo/view/reordr-pdf/reorder_pdf.dart';
 import 'package:pdf_demo/view/split-pdf/split_pdf.dart';
 import 'package:pdf_demo/view/text-pdf/text_pdf.dart';
 import 'package:pdf_demo/view/view-pdf/view_pdf.dart';
-import 'view/extractimage-pdf/extract_image_pdf.dart';
+import 'view/extracttext-pdf/extract_text_pdf.dart';
 import 'view/lock-pdf/lock_pdf.dart';
 import 'view/merge-pdf/merge_pdf.dart';
 import 'view/resize-pdf/resize_pdf.dart';
@@ -97,18 +97,12 @@ class _HomeState extends State<Home> {
         'desc': 'Remove specific pages from PDF',
         'onTap': () => Get.to(() => const DeletePdf()),
       },
-      // {
-      //   'icon': Icons.image_search,
-      //   'name': 'Extract Images',
-      //   'desc': 'Export all images from PDF',
-      //   'onTap': () => Get.to(() => const ExtractImages()),
-      // },
-      // {
-      //   'icon': Icons.text_snippet,
-      //   'name': 'Extract Text',
-      //   'desc': 'Copy all text content from PDF',
-      //   'onTap': () => Get.to(() => const ExtractText()),
-      // },
+      {
+        'icon': Icons.text_snippet,
+        'name': 'Extract Text',
+        'desc': 'Copy all text content from PDF',
+        'onTap': () => Get.to(() => const ExtractText()),
+      },
     ];
 
     return Scaffold(
