@@ -34,6 +34,7 @@ class MergePdfController extends GetxController {
     return _formatSize(total);
   }
 
+// Updated Controller - pickPdfFiles method
   Future<void> pickPdfFiles() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -53,7 +54,7 @@ class MergePdfController extends GetxController {
           }
         }
 
-        // Reset merged file when adding new files
+        // Reset merged file when adding new files (this hides the success card)
         if (selectedFiles.isNotEmpty) {
           _resetMergedFile();
         }

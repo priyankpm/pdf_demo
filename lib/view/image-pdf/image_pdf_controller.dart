@@ -12,9 +12,18 @@ class ImageToPdfController extends GetxController {
   final RxList<File> images = <File>[].obs;
   final RxBool isProcessing = false.obs;
   final RxString processingStatus = ''.obs;
+  final Rx<File?> generatedPdfFile = Rx<File?>(null);
+  final RxInt totalPagesConverted = 0.obs;
 
   int get imageCount => images.length;
   bool get hasImages => images.isNotEmpty;
+  bool get hasGeneratedPdf => generatedPdfFile.value != null;
+
+  String get pdfFileName =>
+      generatedPdfFile.value?.path.split(Platform.pathSeparator).last ?? '';
+  String get pdfFilePath => generatedPdfFile.value?.path ?? '';
+  String get pdfFileSize =>
+      _formatSize(generatedPdfFile.value?.lengthSync() ?? 0);
 
   Future<void> pickImages() async {
     try {
@@ -30,6 +39,11 @@ class ImageToPdfController extends GetxController {
             .toList();
 
         images.addAll(newImages);
+
+        // Reset generated PDF when adding new images
+        if (images.isNotEmpty) {
+          _resetGeneratedPdf();
+        }
       }
     } catch (e) {
       _showToast('Error', 'Failed to pick images: $e');
@@ -39,6 +53,7 @@ class ImageToPdfController extends GetxController {
   void removeImage(int index) {
     if (index >= 0 && index < images.length) {
       images.removeAt(index);
+      _resetGeneratedPdf();
     }
   }
 
@@ -52,6 +67,7 @@ class ImageToPdfController extends GetxController {
           TextButton(
             onPressed: () {
               images.clear();
+              _resetGeneratedPdf();
               Get.back();
               _showToast('Cleared', 'All images removed');
             },
@@ -66,6 +82,7 @@ class ImageToPdfController extends GetxController {
   void reorderImages(int oldIndex, int newIndex) {
     final image = images.removeAt(oldIndex);
     images.insert(newIndex, image);
+    _resetGeneratedPdf();
   }
 
   Future<void> convertToPdf() async {
@@ -76,13 +93,14 @@ class ImageToPdfController extends GetxController {
 
     isProcessing.value = true;
     processingStatus.value = 'Preparing...';
+    _resetGeneratedPdf();
 
     try {
       final pdf = pw.Document(compress: true, version: PdfVersion.pdf_1_5);
 
       for (int i = 0; i < images.length; i++) {
         processingStatus.value =
-            'Processing image ${i + 1} of ${images.length}...';
+        'Processing image ${i + 1} of ${images.length}...';
 
         final imageBytes = await images[i].readAsBytes();
 
@@ -96,8 +114,8 @@ class ImageToPdfController extends GetxController {
         final decodedImage = img.decodeImage(imageBytes);
         if (decodedImage == null) {
           _showToast(
-            'Warning',
-            'Image ${i + 1} couldn’t be read properly. Please remove it and continue generating.',
+              'Warning',
+              "Image ${i + 1} couldn't be read properly. Please remove it and continue generating.",
           );
           isProcessing.value = false;
           processingStatus.value = '';
@@ -128,12 +146,14 @@ class ImageToPdfController extends GetxController {
       processingStatus.value = 'Saving PDF...';
 
       final outputFile = await _savePdf(pdf);
-      final fileSize = outputFile.lengthSync();
+
+      generatedPdfFile.value = outputFile;
+      totalPagesConverted.value = images.length;
 
       isProcessing.value = false;
       processingStatus.value = '';
 
-      _showSuccessDialog(outputFile, fileSize);
+      _showToast('Success', 'PDF created successfully with ${images.length} pages');
     } catch (e) {
       _showToast('Error', 'Failed to convert images: $e');
       isProcessing.value = false;
@@ -187,162 +207,9 @@ class ImageToPdfController extends GetxController {
     return outputFile;
   }
 
-  void _showSuccessDialog(File file, int fileSize) {
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Success Icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.teal[50],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle,
-                  color: Colors.teal[700],
-                  size: 48,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              const Text(
-                'PDF Created Successfully!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-
-              Card(
-                elevation: 0,
-                color: Colors.teal[50],
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.picture_as_pdf,
-                                color: Colors.teal[700],
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Pages:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${images.length}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.file_present,
-                                color: Colors.teal[700],
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'File Size:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            _formatSize(fileSize),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Saved Location:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      file.path,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Done Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                    images.clear();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _resetGeneratedPdf() {
+    generatedPdfFile.value = null;
+    totalPagesConverted.value = 0;
   }
 
   String _formatSize(int bytes) {

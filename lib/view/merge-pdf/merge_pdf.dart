@@ -9,425 +9,814 @@ class MergePdf extends StatefulWidget {
   State<MergePdf> createState() => _MergePdfState();
 }
 
-class _MergePdfState extends State<MergePdf> {
+class _MergePdfState extends State<MergePdf> with SingleTickerProviderStateMixin {
   final controller = Get.put(MergePdfController());
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('PDF Merger'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeaderCard(),
-              const SizedBox(height: 20),
-              _buildSelectButton(controller),
-              const SizedBox(height: 20),
-              Obx(
-                    () => controller.hasSelectedFiles
-                    ? _buildSelectedFilesSection(controller)
-                    : _buildEmptyState(),
+      backgroundColor: Colors.grey[50],
+      body: Column(
+        children: [
+          // Premium Header
+          _buildPremiumHeader(),
+
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+
+                  // Select Button
+                  _buildSelectButton(),
+
+                  const SizedBox(height: 20),
+
+                  // Content Section
+                  Obx(() => controller.hasSelectedFiles
+                      ? _buildFilesSection()
+                      : _buildEmptyState()),
+
+                  Obx(() => controller.hasSelectedFiles
+                      ? _buildBottomActionBar()
+                      : const SizedBox.shrink()),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+
+        ],
       ),
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.merge_type, size: 48, color: Colors.teal),
-            const SizedBox(height: 12),
-            const Text(
-              'PDF Merger',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Combine multiple PDF files into a single document',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
+  // Premium Header with Gradient
+  Widget _buildPremiumHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF667eea),
+            Color(0xFF764ba2),
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF667eea).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildSelectButton(MergePdfController controller) {
-    return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value
-            ? null
-            : controller.pickPdfFiles,
-        icon: const Icon(Icons.add),
-        label: Text(
-          controller.hasSelectedFiles
-              ? 'Add More PDF Files'
-              : 'Select PDF Files',
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectedFilesSection(MergePdfController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildFilesListCard(controller),
-        const SizedBox(height: 20),
-        _buildMergeButton(controller),
-        Obx(
-              () => controller.isProcessing.value
-              ? _buildProcessingIndicator(controller)
-              : const SizedBox.shrink(),
-        ),
-        Obx(
-              () => controller.hasMergedFile
-              ? _buildResultCard(controller)
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilesListCard(MergePdfController controller) {
-    return Obx(
-          () => Card(
-        elevation: 2,
+      child: SafeArea(bottom: false,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // App Bar
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.list_alt, color: Colors.teal[700]),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "Selected Files",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ],
-                  ),
                   Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.teal[100],
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      '${controller.selectedFiles.length} files',
-                      style: TextStyle(
-                        color: Colors.teal[900],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1.5,
                       ),
                     ),
+                    child: Obx(() => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.insert_drive_file_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${controller.selectedFiles.length} Files',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    )),
                   ),
                 ],
               ),
-              const Divider(height: 20),
-              Text(
-                'Drag to reorder • Swipe to remove',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.selectedFiles.length,
-                onReorder: (oldIndex, newIndex) {
-                  if (!controller.isProcessing.value) {
-                    controller.reorderFiles(oldIndex, newIndex);
-                  }
-                },
-                itemBuilder: (context, index) {
-                  final file = controller.selectedFiles[index];
-                  return Dismissible(
-                    key: Key(file.path),
-                    direction: controller.isProcessing.value
-                        ? DismissDirection.none
-                        : DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      color: Colors.red,
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (direction) {
-                      controller.removeFile(index);
-                    },
-                    child: Card(
-                      key: Key(file.path),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      color: Colors.teal[50],
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.teal[700],
-                          foregroundColor: Colors.white,
-                          child: Text('${index + 1}'),
-                        ),
-                        title: Text(
-                          controller.getFileName(file),
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          controller.getFileSize(file),
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                        trailing: Icon(Icons.drag_handle, color: Colors.grey[400]),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.grey[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Total Size: ${controller.totalSize}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildMergeButton(MergePdfController controller) {
-    return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value ||
-            controller.selectedFiles.length < 2
-            ? null
-            : controller.mergePdfs,
-        icon: controller.isProcessing.value
-            ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
-            : const Icon(Icons.merge_type, size: 24),
-        label: Text(
-          controller.isProcessing.value
-              ? 'Merging...'
-              : controller.selectedFiles.length < 2
-              ? 'Select at least 2 files'
-              : 'Merge PDFs',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProcessingIndicator(MergePdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30),
-      child: Obx(
-            () => Center(
-          child: Column(
-            children: [
-              Text(
-                controller.processingStatus.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Combining PDF files...',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard(MergePdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Obx(
-            () => Card(
-          elevation: 4,
-          color: Colors.teal[50],
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.teal[700], size: 28),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "PDFs Merged Successfully!",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.teal,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                _buildInfoRow('Merged File', controller.mergedFileName),
-                const SizedBox(height: 8),
-                _buildInfoRow('File Size', controller.mergedFileSize),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                    'Total Pages', '${controller.totalPagesMerged} pages'),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.teal[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
+                           // Title Section
+              Padding(
+                padding: const EdgeInsets.only(top: 30,bottom: 20),
+                child: Center(
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.merge_type, color: Colors.teal[900]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Combined ${controller.selectedFiles.length} files into one PDF",
-                          style: TextStyle(
-                            color: Colors.teal[900],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
                           ),
                         ),
+                        child: const Icon(
+                          Icons.merge_type_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Merge PDFs',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Combine multiple files into one',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Select Button
+  Widget _buildSelectButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Obx(() => Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        child: InkWell(
+          onTap: controller.isProcessing.value
+              ? null
+              : controller.pickPdfFiles,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Color(0xFF667eea).withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(6),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Saved Location:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.mergedFilePath,
-                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  controller.hasSelectedFiles
+                      ? 'Add More Files'
+                      : 'Select PDF Files',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF667eea),
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 40),
-      child: Center(
+  // Files Section
+  Widget _buildFilesSection() {
+    return FadeTransition(
+      opacity: _animationController,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.upload_file, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              'No PDFs selected',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+            // Section Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF667eea).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.folder_open_rounded,
+                      color: Color(0xFF667eea),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Selected Files',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const Spacer(),
+                  Obx(() => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      controller.totalSize,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Click "Select PDF Files" to begin',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+
+            const SizedBox(height: 12),
+
+            // Hint
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.blue.shade100,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Drag to reorder • Swipe left to remove',
+                      style: TextStyle(
+                        color: Colors.blue.shade900,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Files List
+            Obx(() => ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.selectedFiles.length,
+              onReorder: (oldIndex, newIndex) {
+                if (!controller.isProcessing.value) {
+                  controller.reorderFiles(oldIndex, newIndex);
+                }
+              },
+              itemBuilder: (context, index) {
+                final file = controller.selectedFiles[index];
+                return _buildFileCard(file, index);
+              },
+            )),
+
+            const SizedBox(height: 20),
+
+            // Result Card
+            Obx(() => controller.hasMergedFile
+                ? _buildResultCard()
+                : const SizedBox.shrink()),
+
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+  // File Card
+  Widget _buildFileCard(dynamic file, int index) {
+    return Dismissible(
+      key: Key(file.path),
+      direction: controller.isProcessing.value
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Colors.red, Colors.redAccent],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+            SizedBox(height: 4),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (direction) {
+        controller.removeFile(index);
+      },
+      child: Container(
+        key: Key(file.path),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Number Badge
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF667eea).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // File Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.getFileName(file),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.insert_drive_file_outlined,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              controller.getFileSize(file),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Drag Handle
+                  Icon(
+                    Icons.drag_indicator_rounded,
+                    color: Colors.grey[400],
+                    size: 24,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
-      ],
+      ),
+    );
+  }
+
+  // Result Card
+  Widget _buildResultCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.green.shade50,
+            Colors.teal.shade50,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.shade200,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Success Icon
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green.shade600,
+              size: 48,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          const Text(
+            'Merge Successful!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Info Cards
+          Obx(() => Column(
+            children: [
+              _buildInfoCard(
+                Icons.description_rounded,
+                'File Name',
+                controller.mergedFileName,
+              ),
+              const SizedBox(height: 10),
+              _buildInfoCard(
+                Icons.storage_rounded,
+                'File Size',
+                controller.mergedFileSize,
+              ),
+              const SizedBox(height: 10),
+              _buildInfoCard(
+                Icons.auto_stories_rounded,
+                'Total Pages',
+                '${controller.totalPagesMerged} pages',
+              ),
+            ],
+          )),
+
+          const SizedBox(height: 16),
+
+          // Location
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.folder_rounded,
+                      size: 18,
+                      color: Colors.grey[700],
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Saved Location:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Obx(() => Text(
+                  controller.mergedFilePath,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Info Card Helper
+  Widget _buildInfoCard(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Empty State
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.upload_file_rounded,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No Files Selected',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Select multiple PDF files to merge them',
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+      child: Obx(() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (controller.isProcessing.value)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Obx(() => Text(
+                controller.processingStatus.value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              )),
+            ),
+
+          Material(
+            color: controller.selectedFiles.length < 2
+                ? Colors.grey.shade300
+                : const Color(0xFF667eea),
+            borderRadius: BorderRadius.circular(16),
+            elevation: controller.selectedFiles.length < 2 ? 0 : 4,
+            shadowColor: Color(0xFF667eea).withValues(alpha: 0.3),
+            child: InkWell(
+              onTap: controller.isProcessing.value ||
+                  controller.selectedFiles.length < 2
+                  ? null
+                  : controller.mergePdfs,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (controller.isProcessing.value)
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    else
+                      const Icon(
+                        Icons.merge_type_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    const SizedBox(width: 12),
+                    Text(
+                      controller.isProcessing.value
+                          ? 'Merging Files...'
+                          : controller.selectedFiles.length < 2
+                          ? 'Select at least 2 files'
+                          : 'Merge ${controller.selectedFiles.length} Files',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: controller.selectedFiles.length < 2
+                            ? Colors.grey.shade600
+                            : Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      )),
     );
   }
 }
