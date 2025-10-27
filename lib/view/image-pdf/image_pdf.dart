@@ -61,14 +61,14 @@ class _ImageToPdfState extends State<ImageToPdf>
                           )
                         : const SizedBox.shrink(),
                   ),
+                  Obx(
+                    () => controller.hasImages
+                        ? _buildBottomActionBar()
+                        : const SizedBox.shrink(),
+                  ),
                 ],
               ),
             ),
-          ),
-          Obx(
-            () => controller.hasImages
-                ? _buildBottomActionBar()
-                : const SizedBox.shrink(),
           ),
         ],
       ),

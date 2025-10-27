@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:pdf_demo/view/text-pdf/text_pdf_controller.dart';
@@ -11,39 +10,177 @@ class TextToPdf extends StatefulWidget {
   State<TextToPdf> createState() => _TextToPdfState();
 }
 
-class _TextToPdfState extends State<TextToPdf> {
+class _TextToPdfState extends State<TextToPdf> with SingleTickerProviderStateMixin {
   final controller = Get.put(TextToPdfController());
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Text to PDF'),
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
+      body: Column(
+        children: [
+          // Premium Header
+          _buildPremiumHeader(),
+
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+
+                  // Content Section
+                  FadeTransition(
+                    opacity: _animationController,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          // PDF Name Input Card
+                          _buildPdfNameCard(),
+
+                          const SizedBox(height: 20),
+
+                          // Editor Card
+                          _buildEditorCard(),
+
+                          const SizedBox(height: 20),
+
+                          // Generate Button
+                          _buildGenerateButton(),
+
+                          // Result Card
+                          Obx(
+                                () => controller.hasGeneratedFile
+                                ? Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: _buildResultCard(),
+                            )
+                                : const SizedBox(),
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+    );
+  }
+
+  // Premium Header with Gradient
+  Widget _buildPremiumHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.teal.shade300, Colors.teal.shade600],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeaderCard(),
-              const SizedBox(height: 12),
-              _buildPdfNameInput(),
-              const SizedBox(height: 12),
-              _buildQuillEditor(),
-              const SizedBox(height: 16),
-              _buildGenerateButton(),
-              Obx(
-                () => controller.hasGeneratedFile
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: _buildResultCard(),
-                      )
-                    : const SizedBox(),
+              // App Bar
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+
+              // Title Section
+              Padding(
+                padding: const EdgeInsets.only(top: 30, bottom: 20),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.text_fields_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Text to PDF',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Create formatted PDFs',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -52,68 +189,146 @@ class _TextToPdfState extends State<TextToPdf> {
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Card(
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.picture_as_pdf, size: 48, color: Colors.teal),
-            const SizedBox(height: 12),
-            const Text(
-              'Text to PDF',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create formatted PDFs easily',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+  // PDF Name Card
+  Widget _buildPdfNameCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildPdfNameInput() {
-    return Obx(
-      () => Card(
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-          child: TextField(
-            enabled: !controller.isProcessing.value,
-            controller: controller.pdfNameController,
-            decoration: const InputDecoration(
-              hintText: 'Enter PDF name (optional)',
-              border: InputBorder.none,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.drive_file_rename_outline_rounded,
+                  color: Colors.teal.shade700,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'PDF Name',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Obx(
+                () => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                enabled: !controller.isProcessing.value,
+                controller: controller.pdfNameController,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Enter PDF name (optional)',
+                  hintStyle: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 15,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuillEditor() {
-    return Card(
-      elevation: 2,
+  // Editor Card
+  Widget _buildEditorCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.edit_document,
+                    color: Colors.teal.shade700,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Content Editor',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Divider
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 1, color: Colors.grey.shade200),
+          ),
+
+          // Toolbar
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-              color: Colors.teal.withValues(alpha: 0.15),
+              color: Colors.grey.shade50,
             ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: quill.QuillSimpleToolbar(
                 controller: controller.quillController,
-                config: const quill.QuillSimpleToolbarConfig(
+                config: quill.QuillSimpleToolbarConfig(
                   showAlignmentButtons: true,
                   showBackgroundColorButton: false,
                   showBoldButton: true,
@@ -145,13 +360,24 @@ class _TextToPdfState extends State<TextToPdf> {
                   showSmallButton: false,
                   showSubscript: false,
                   showSuperscript: false,
+                  buttonOptions: quill.QuillSimpleToolbarButtonOptions(
+                    base: quill.QuillToolbarBaseButtonOptions(
+                      iconTheme: quill.QuillIconTheme(
+                        iconButtonSelectedData: quill.IconButtonData(
+                          color: Colors.teal.shade700,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+
+          // Editor
           Container(
-            height: 400,
-            padding: const EdgeInsets.all(16),
+            height: 350,
+            padding: const EdgeInsets.all(20),
             child: quill.QuillEditor.basic(
               controller: controller.quillController,
               config: const quill.QuillEditorConfig(
@@ -159,6 +385,7 @@ class _TextToPdfState extends State<TextToPdf> {
                 autoFocus: false,
                 expands: false,
                 scrollable: true,
+                padding: EdgeInsets.all(8),
               ),
             ),
           ),
@@ -167,81 +394,202 @@ class _TextToPdfState extends State<TextToPdf> {
     );
   }
 
+  // Generate Button
   Widget _buildGenerateButton() {
-    return Obx(
-      () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value
-            ? null
-            : controller.generatePdfFromText,
-        icon: controller.isProcessing.value
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Icon(Icons.picture_as_pdf),
-        label: Text(
-          controller.isProcessing.value ? 'Generating...' : 'Generate PDF',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard() {
-    return Card(
-      elevation: 3,
-      color: Colors.teal[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Obx(
+            () => Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.teal[700], size: 28),
-                const SizedBox(width: 12),
-                const Text(
-                  "PDF Generated!",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.teal,
+            if (controller.isProcessing.value)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  children: const [
+                    Text(
+                      'Generating PDF...',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Please wait while we create your PDF',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+
+            Material(
+              color: controller.isProcessing.value
+                  ? Colors.grey.shade300
+                  : Colors.teal.shade600,
+              borderRadius: BorderRadius.circular(16),
+              elevation: controller.isProcessing.value ? 0 : 4,
+              shadowColor: Colors.teal.withValues(alpha: 0.3),
+              child: InkWell(
+                onTap: controller.isProcessing.value
+                    ? null
+                    : controller.generatePdfFromText,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (controller.isProcessing.value)
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      else
+                        const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      const SizedBox(width: 12),
+                      Text(
+                        controller.isProcessing.value
+                            ? 'Generating...'
+                            : 'Generate PDF',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: controller.isProcessing.value
+                              ? Colors.grey.shade600
+                              : Colors.white,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-            const Divider(height: 24),
-            _buildInfoRow('File Name', controller.generatedFileName),
-            const SizedBox(height: 8),
-            _buildInfoRow('File Path', controller.generatedFilePath),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+  // Result Card
+  Widget _buildResultCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.teal.shade50, Colors.teal.shade50],
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
-      ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.teal.shade200, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Success Icon
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.teal.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.check_circle_rounded,
+              color: Colors.teal.shade600,
+              size: 48,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          const Text(
+            'PDF Generated!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Info Cards
+          _buildResultInfoCard(
+            Icons.description_rounded,
+            'File Name',
+            controller.generatedFileName,
+          ),
+          const SizedBox(height: 10),
+          _buildResultInfoCard(
+            Icons.folder_rounded,
+            'Saved Location',
+            controller.generatedFilePath,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultInfoCard(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

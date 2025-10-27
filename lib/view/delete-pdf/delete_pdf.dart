@@ -9,213 +9,149 @@ class DeletePdf extends StatefulWidget {
   State<DeletePdf> createState() => _DeletePdfState();
 }
 
-class _DeletePdfState extends State<DeletePdf> {
+class _DeletePdfState extends State<DeletePdf> with SingleTickerProviderStateMixin {
   final controller = Get.put(DeletePdfController());
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Delete PDF Pages'),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.grey[50],
       body: Obx(() {
-        // Show page view dialog if viewing a page
         if (controller.viewingPageIndex.value >= 0) {
           return _buildPageViewDialog(context, controller);
         }
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeaderCard(),
-                const SizedBox(height: 20),
-                _buildSelectButton(controller),
-                const SizedBox(height: 20),
-                Obx(
-                  () => controller.hasSelectedFile
-                      ? _buildSelectedFileSection(controller)
-                      : _buildEmptyState(),
+        return Column(
+          children: [
+            _buildPremiumHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildSelectButton(),
+                    const SizedBox(height: 20),
+                    Obx(
+                          () => controller.hasSelectedFile
+                          ? _buildContentSection()
+                          : _buildEmptyState(),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       }),
     );
   }
 
-  // Build full-screen page view
-  Widget _buildPageViewDialog(
-    BuildContext context,
-    DeletePdfController controller,
-  ) {
-    final pageIndex = controller.viewingPageIndex.value;
-    final pageNumber = pageIndex + 1;
-
-    return Column(
-      children: [
-        Container(
-          color: Colors.grey[900],
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Page $pageNumber of ${controller.totalPages.value}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                onPressed: controller.closeSinglePageView,
-              ),
-            ],
+  // Premium Header
+  Widget _buildPremiumHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.teal.shade300, Colors.teal.shade600],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-        ),
-        Expanded(
-          child: Container(
-            color: Colors.grey[200],
-            child:
-                controller.pageImages.isNotEmpty &&
-                    pageIndex < controller.pageImages.length &&
-                    controller.pageImages[pageIndex] != null
-                ? Center(
-                    child: Image.memory(
-                      controller.pageImages[pageIndex]!,
-                      fit: BoxFit.contain,
-                    ),
-                  )
-                : const Center(child: CircularProgressIndicator()),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.delete_sweep, size: 48, color: Colors.deepOrange),
-            const SizedBox(height: 12),
-            const Text(
-              'PDF Page Remover',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Select and remove unwanted pages from your PDF',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildSelectButton(DeletePdfController controller) {
-    return Obx(
-      () => ElevatedButton.icon(
-        onPressed:
-            controller.isProcessing.value || controller.isLoadingPages.value
-            ? null
-            : controller.pickPdfFile,
-        icon: const Icon(Icons.folder_open),
-        label: const Text('Select PDF File'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.deepOrange,
-          foregroundColor: Colors.white,
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectedFileSection(DeletePdfController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildFileInfoCard(controller),
-        const SizedBox(height: 20),
-        Obx(() {
-          if (controller.isLoadingPages.value) {
-            return _buildLoadingIndicator(controller);
-          }
-          return _buildPagesGrid(controller);
-        }),
-        const SizedBox(height: 20),
-        Obx(() {
-          if (controller.isDeletionComplete.value) {
-            return _buildResetButton(controller);
-          } else if (!controller.isLoadingPages.value &&
-              controller.pageImages.isNotEmpty) {
-            return _buildDeleteButton(controller);
-          }
-          return const SizedBox.shrink();
-        }),
-        Obx(
-          () => controller.isProcessing.value
-              ? _buildProcessingIndicator(controller)
-              : const SizedBox.shrink(),
-        ),
-        Obx(
-          () => controller.hasProcessedFile
-              ? _buildResultCard(controller)
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFileInfoCard(DeletePdfController controller) {
-    return Obx(
-      () => Card(
-        elevation: 2,
-        color: Colors.deepOrange[50],
+      child: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons.picture_as_pdf, color: Colors.deepOrange[700]),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Selected File",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Get.back(),
+                    ),
                   ),
+                  const Spacer(),
                 ],
               ),
-              const Divider(height: 20),
-              _buildInfoRow('Filename', controller.selectedFileName),
-              const SizedBox(height: 8),
-              _buildInfoRow('Original Size', controller.formattedOriginalSize),
-              if (controller.totalPages.value > 0) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow('Total Pages', controller.totalPages.toString()),
-              ],
-              if (controller.selectedPagesToDelete.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Selected for Deletion',
-                  '${controller.selectedPagesToDelete.length} page(s)',
+              Padding(
+                padding: const EdgeInsets.only(top: 30, bottom: 20),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.delete_sweep,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Delete PDF',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Remove unwanted pages',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -223,103 +159,364 @@ class _DeletePdfState extends State<DeletePdf> {
     );
   }
 
-  Widget _buildLoadingIndicator(DeletePdfController controller) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            const CircularProgressIndicator(color: Colors.deepOrange),
-            const SizedBox(height: 20),
-            Obx(
-              () => Text(
-                controller.processingStatus.value,
-                style: const TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+  // Select Button
+  Widget _buildSelectButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Obx(
+            () => Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.1),
+          child: InkWell(
+            onTap: controller.isProcessing.value || controller.isLoadingPages.value
+                ? null
+                : controller.pickPdfFile,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.teal.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade300, Colors.teal.shade600],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      controller.hasSelectedFile
+                          ? Icons.sync_rounded
+                          : Icons.upload_file_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    controller.hasSelectedFile
+                        ? 'Change PDF File'
+                        : 'Select PDF File',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Content Section
+  Widget _buildContentSection() {
+    return FadeTransition(
+      opacity: _animationController,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            _buildFileInfoCard(),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (controller.isLoadingPages.value) {
+                return _buildLoadingIndicator();
+              }
+              return _buildPagesGrid();
+            }),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (controller.isDeletionComplete.value) {
+                return _buildResetButton();
+              } else if (!controller.isLoadingPages.value &&
+                  controller.pageImages.isNotEmpty) {
+                return _buildDeleteButton();
+              }
+              return const SizedBox.shrink();
+            }),
+            Obx(
+                  () => controller.isProcessing.value
+                  ? _buildProcessingIndicator()
+                  : const SizedBox.shrink(),
+            ),
+            Obx(
+                  () => controller.hasProcessedFile
+                  ? _buildResultCard()
+                  : const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPagesGrid(DeletePdfController controller) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  // File Info Card
+  Widget _buildFileInfoCard() {
+    return Obx(
+          () => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Select Pages to Delete",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf_rounded,
+                    color: Colors.teal.shade700,
+                    size: 20,
+                  ),
                 ),
-                Obx(() {
-                  if (controller.selectedPagesToDelete.isNotEmpty &&
-                      !controller.isDeletionComplete.value) {
-                    return TextButton.icon(
-                      onPressed: controller.clearSelection,
-                      icon: const Icon(Icons.clear_all, size: 18),
-                      label: const Text('Clear'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.deepOrange,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
+                const SizedBox(width: 12),
+                const Text(
+                  'Selected File',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
               ],
             ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              Icons.description_rounded,
+              'File Name',
+              controller.selectedFileName,
+            ),
             const SizedBox(height: 12),
-            Obx(
-              () => controller.isDeletionComplete.value
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+            _buildInfoRow(
+              Icons.storage_rounded,
+              'File Size',
+              controller.formattedOriginalSize,
+            ),
+            if (controller.totalPages.value > 0) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                Icons.article_rounded,
+                'Total Pages',
+                controller.totalPages.toString(),
+              ),
+            ],
+            if (controller.selectedPagesToDelete.isNotEmpty &&
+                !controller.isDeletionComplete.value) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.teal.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_rounded,
+                      color: Colors.teal.shade700,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
                       child: Text(
-                        'Processing complete. Press "Reset" to process another PDF',
+                        '${controller.selectedPagesToDelete.length} page(s) selected for deletion',
                         style: TextStyle(
-                          color: controller.isDeletionComplete.value
-                              ? Colors.green[700]
-                              : Colors.grey[600],
+                          color: Colors.teal.shade700,
                           fontSize: 12,
-                          fontWeight: controller.isDeletionComplete.value
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  : SizedBox(),
-            ),
-            Obx(
-              () => GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.65,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                    ),
+                  ],
                 ),
-                itemCount: controller.pageImages.length,
-                itemBuilder: (context, index) {
-                  return _buildPageCard(index, controller);
-                },
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPageCard(int index, DeletePdfController controller) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Loading Indicator
+  Widget _buildLoadingIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(color: Colors.teal),
+          const SizedBox(height: 20),
+          Obx(
+                () => Text(
+              controller.processingStatus.value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Pages Grid
+  Widget _buildPagesGrid() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Select Pages to Delete',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Obx(() {
+                if (controller.selectedPagesToDelete.isNotEmpty &&
+                    !controller.isDeletionComplete.value) {
+                  return TextButton.icon(
+                    onPressed: controller.clearSelection,
+                    icon: const Icon(Icons.clear_all, size: 18),
+                    label: const Text('Clear'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(
+                () => controller.isDeletionComplete.value
+                ? Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Processing complete. Press "Reset" to process another PDF',
+                style: TextStyle(
+                  color: Colors.teal[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+                : const SizedBox(),
+          ),
+          Obx(
+                () => GridView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.65,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: controller.pageImages.length,
+              itemBuilder: (context, index) {
+                return _buildPageCard(index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageCard(int index) {
     final pageNumber = index + 1;
     return Obx(() {
       final isSelected = controller.selectedPagesToDelete.contains(pageNumber);
@@ -330,17 +527,20 @@ class _DeletePdfState extends State<DeletePdf> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? Colors.red : Colors.grey[300]!,
-              width: isSelected ? 2.5 : 1,
+              color: isSelected
+                  ? Colors.teal.shade600
+                  : Colors.teal.withValues(alpha: 0.3),
+              width: isSelected ? 2.5 : 1.5,
             ),
+            color: Colors.white,
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? Colors.red.withValues(alpha: 0.3)
+                    ? Colors.teal.withValues(alpha: 0.2)
                     : Colors.black.withValues(alpha: 0.05),
-                blurRadius: isSelected ? 6 : 2,
+                blurRadius: isSelected ? 8 : 2,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -348,7 +548,7 @@ class _DeletePdfState extends State<DeletePdf> {
           child: Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: BorderRadius.circular(11),
                 child: Column(
                   children: [
                     Expanded(
@@ -356,31 +556,36 @@ class _DeletePdfState extends State<DeletePdf> {
                         color: Colors.grey[100],
                         child: controller.pageImages[index] != null
                             ? Stack(
-                                children: [
-                                  Image.memory(
-                                    controller.pageImages[index]!,
-                                    fit: BoxFit.contain,
-                                    width: double.infinity,
-                                  ),
-                                  if (isDeletionComplete)
-                                    Container(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                    ),
-                                ],
-                              )
-                            : const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
+                          children: [
+                            Image.memory(
+                              controller.pageImages[index]!,
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                            ),
+                            if (isDeletionComplete)
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.1),
                               ),
+                          ],
+                        )
+                            : const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12,vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       width: double.infinity,
-                      color: isSelected ? Colors.red[50] : Colors.white,
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.teal.shade50 : Colors.teal.shade50,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(11),
+                          bottomRight: Radius.circular(11),
+                        ),
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -390,14 +595,19 @@ class _DeletePdfState extends State<DeletePdf> {
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
                               color: isSelected
-                                  ? Colors.red[700]
-                                  : Colors.black87,
+                                  ? Colors.teal[700]
+                                  : Colors.teal[700],
                             ),
-                            textAlign: TextAlign.center,
                           ),
                           GestureDetector(
                             onTap: () => controller.viewSinglePage(index),
-                            child: Icon(Icons.remove_red_eye, size: 18),
+                            child: Icon(
+                              Icons.remove_red_eye,
+                              size: 18,
+                              color: isSelected
+                                  ? Colors.teal[700]
+                                  : Colors.teal[700],
+                            ),
                           ),
                         ],
                       ),
@@ -405,7 +615,6 @@ class _DeletePdfState extends State<DeletePdf> {
                   ],
                 ),
               ),
-
               if (isSelected)
                 Positioned(
                   top: 4,
@@ -413,7 +622,7 @@ class _DeletePdfState extends State<DeletePdf> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: Colors.teal.shade600,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -445,11 +654,7 @@ class _DeletePdfState extends State<DeletePdf> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.lock,
-                      color: Colors.white,
-                      size: 14,
-                    ),
+                    child: const Icon(Icons.lock, color: Colors.white, size: 14),
                   ),
                 ),
             ],
@@ -459,165 +664,95 @@ class _DeletePdfState extends State<DeletePdf> {
     });
   }
 
-  Widget _buildDeleteButton(DeletePdfController controller) {
-    return Obx(
-      () => ElevatedButton.icon(
-        onPressed:
-            controller.isProcessing.value ||
-                controller.selectedPagesToDelete.isEmpty
-            ? null
-            : controller.deletePdfPages,
-        icon: controller.isProcessing.value
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Icon(Icons.delete, size: 24),
-        label: Text(
-          controller.isProcessing.value
-              ? 'Deleting Pages...'
-              : 'Delete Selected Pages (${controller.selectedPagesToDelete.length})',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.deepOrange,
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResetButton(DeletePdfController controller) {
-    return ElevatedButton.icon(
-      onPressed: controller.resetForNewFile,
-      icon: const Icon(Icons.refresh, size: 24),
-      label: const Text(
-        'Reset & Process Another PDF',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildProcessingIndicator(DeletePdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30),
+  // Delete Button
+  Widget _buildDeleteButton() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Obx(
-        () => Center(
-          child: Column(
-            children: [
-              Text(
-                controller.processingStatus.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
+            () => Material(
+          color: controller.isProcessing.value
+              ? Colors.grey.shade300
+              : Colors.teal.shade600,
+          borderRadius: BorderRadius.circular(16),
+          elevation: controller.isProcessing.value ? 0 : 4,
+          shadowColor: Colors.teal.withValues(alpha: 0.3),
+          child: InkWell(
+            onTap: controller.isProcessing.value ||
+                controller.selectedPagesToDelete.isEmpty
+                ? null
+                : controller.deletePdfPages,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (controller.isProcessing.value)
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.delete_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  const SizedBox(width: 12),
+                  Text(
+                    controller.isProcessing.value
+                        ? 'Deleting Pages...'
+                        : 'Delete Selected (${controller.selectedPagesToDelete.length})',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: controller.isProcessing.value
+                          ? Colors.grey.shade600
+                          : Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please wait, this may take a while...',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildResultCard(DeletePdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Obx(
-        () => Card(
-          elevation: 4,
-          color: Colors.green[50],
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  // Reset Button
+  Widget _buildResetButton() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Material(
+        color: Colors.teal.shade600,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 4,
+        shadowColor: Colors.teal.withValues(alpha: 0.3),
+        child: InkWell(
+          onTap: controller.resetForNewFile,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green[700],
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "Pages Deleted Successfully!",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                _buildInfoRow('Output File', controller.processedFileName),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Original Pages',
-                        controller.totalPages.toString(),
-                        Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Deleted',
-                        controller.deletedPagesCount.toString(),
-                        Colors.red,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Remaining',
-                        controller.remainingPages.toString(),
-                        Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Saved Location:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.processedFilePath,
-                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                      ),
-                    ],
+                const Icon(Icons.refresh, color: Colors.white, size: 26),
+                const SizedBox(width: 12),
+                const Text(
+                  'Reset & Process Another',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -628,78 +763,370 @@ class _DeletePdfState extends State<DeletePdf> {
     );
   }
 
-  Widget _buildEmptyState() {
+  // Processing Indicator
+  Widget _buildProcessingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(top: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.upload_file, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              'No PDF selected',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Click "Select PDF File" to begin',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
+        child: Obx(
+              () => Column(
+            children: [
+              const CircularProgressIndicator(color: Colors.teal),
+              const SizedBox(height: 16),
+              Text(
+                controller.processingStatus.value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait, this may take a while...',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 140,
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+  // Result Card
+  Widget _buildResultCard() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Obx(
+            () => Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.teal.shade50, Colors.teal.shade50],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.teal.shade200, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.teal.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.teal.shade600,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Pages Deleted Successfully!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Original',
+                      controller.totalPages.toString(),
+                      Colors.grey,
+                      Icons.article_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Deleted',
+                      controller.deletedPagesCount.toString(),
+                      Colors.teal,
+                      Icons.delete_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Remaining',
+                      controller.remainingPages.toString(),
+                      Colors.teal,
+                      Icons.check_circle_rounded,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildResultInfoCard(
+                Icons.description_rounded,
+                'Output File',
+                controller.processedFileName,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.folder_rounded,
+                          size: 18,
+                          color: Colors.grey[700],
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Saved Location:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      controller.processedFilePath,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
-      ],
+      ),
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color) {
+  Widget _buildStatCard(String label, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
+          Icon(icon, size: 24, color: color),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               color: color,
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildResultInfoCard(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Page View Dialog
+  Widget _buildPageViewDialog(
+      BuildContext context,
+      DeletePdfController controller,
+      ) {
+    final pageIndex = controller.viewingPageIndex.value;
+    final pageNumber = pageIndex + 1;
+
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.teal.shade400, Colors.teal.shade600],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Page $pageNumber / ${controller.totalPages.value}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: controller.closeSinglePageView,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            color: Colors.grey[200],
+            child:
+            controller.pageImages.isNotEmpty &&
+                pageIndex < controller.pageImages.length &&
+                controller.pageImages[pageIndex] != null
+                ? Center(
+              child: Image.memory(
+                controller.pageImages[pageIndex]!,
+                fit: BoxFit.contain,
+              ),
+            )
+                : const Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Empty State
+  Widget _buildEmptyState() {
+    return FadeTransition(
+      opacity: _animationController,
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.upload_file_rounded,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No PDF Selected',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a PDF file to delete pages',
+              style: TextStyle(fontSize: 15, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

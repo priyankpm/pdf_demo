@@ -9,212 +9,150 @@ class ReorderPdf extends StatefulWidget {
   State<ReorderPdf> createState() => _ReorderPdfState();
 }
 
-class _ReorderPdfState extends State<ReorderPdf> {
+class _ReorderPdfState extends State<ReorderPdf>
+    with SingleTickerProviderStateMixin {
   final controller = Get.put(ReorderPdfController());
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Reorder PDF Pages'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.grey[50],
       body: Obx(() {
         if (controller.viewingPageIndex.value >= 0) {
           return _buildPageViewDialog(context, controller);
         }
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeaderCard(),
-                const SizedBox(height: 20),
-                _buildSelectButton(controller),
-                const SizedBox(height: 20),
-                Obx(
+        return Column(
+          children: [
+            _buildPremiumHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildSelectButton(),
+                    const SizedBox(height: 20),
+                    Obx(
                       () => controller.hasSelectedFile
-                      ? _buildSelectedFileSection(controller)
-                      : _buildEmptyState(),
+                          ? _buildContentSection()
+                          : _buildEmptyState(),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       }),
     );
   }
 
-  Widget _buildPageViewDialog(
-      BuildContext context,
-      ReorderPdfController controller,
-      ) {
-    final pageIndex = controller.viewingPageIndex.value;
-    final originalPageIndex = controller.pageOrder[pageIndex];
-    final pageNumber = originalPageIndex + 1;
-
-    return Column(
-      children: [
-        Container(
-          color: Colors.grey[900],
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Page $pageNumber (Position ${pageIndex + 1})',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                onPressed: controller.closeSinglePageView,
-              ),
-            ],
+  // Premium Header
+  Widget _buildPremiumHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.teal.shade300, Colors.teal.shade600],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-        ),
-        Expanded(
-          child: Container(
-            color: Colors.grey[200],
-            child: controller.pageImages.isNotEmpty &&
-                originalPageIndex < controller.pageImages.length &&
-                controller.pageImages[originalPageIndex] != null
-                ? Center(
-              child: Image.memory(
-                controller.pageImages[originalPageIndex]!,
-                fit: BoxFit.contain,
-              ),
-            )
-                : const Center(child: CircularProgressIndicator()),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.swap_vert, size: 48, color: Colors.blue),
-            const SizedBox(height: 12),
-            const Text(
-              'PDF Page Reorder',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Long press and drag to reorder pages in your PDF',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildSelectButton(ReorderPdfController controller) {
-    return Obx(
-          () => ElevatedButton.icon(
-        onPressed:
-        controller.isProcessing.value || controller.isLoadingPages.value
-            ? null
-            : controller.pickPdfFile,
-        icon: const Icon(Icons.folder_open),
-        label: const Text('Select PDF File'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectedFileSection(ReorderPdfController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildFileInfoCard(controller),
-        const SizedBox(height: 20),
-        Obx(() {
-          if (controller.isLoadingPages.value) {
-            return _buildLoadingIndicator(controller);
-          }
-          return _buildPagesReorderGrid(controller);
-        }),
-        const SizedBox(height: 20),
-        Obx(() {
-          if (controller.isReorderComplete.value) {
-            return _buildResetButton(controller);
-          } else if (!controller.isLoadingPages.value &&
-              controller.pageImages.isNotEmpty) {
-            return _buildSaveButton(controller);
-          }
-          return const SizedBox.shrink();
-        }),
-        Obx(
-              () => controller.isProcessing.value
-              ? _buildProcessingIndicator(controller)
-              : const SizedBox.shrink(),
-        ),
-        Obx(
-              () => controller.hasProcessedFile
-              ? _buildResultCard(controller)
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFileInfoCard(ReorderPdfController controller) {
-    return Obx(
-          () => Card(
-        elevation: 2,
-        color: Colors.blue[50],
+      child: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons.picture_as_pdf, color: Colors.blue[700]),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Selected File",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Get.back(),
+                    ),
                   ),
+                  const Spacer(),
                 ],
               ),
-              const Divider(height: 20),
-              _buildInfoRow('Filename', controller.selectedFileName),
-              const SizedBox(height: 8),
-              _buildInfoRow('Original Size', controller.formattedOriginalSize),
-              if (controller.totalPages.value > 0) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow('Total Pages', controller.totalPages.toString()),
-              ],
-              if (controller.hasReordered &&
-                  !controller.isReorderComplete.value) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Status',
-                  'Pages have been reordered',
+              Padding(
+                padding: const EdgeInsets.only(top: 30, bottom: 20),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.swap_vert,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Reorder PDF',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Rearrange pages easily',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -222,99 +160,364 @@ class _ReorderPdfState extends State<ReorderPdf> {
     );
   }
 
-  Widget _buildLoadingIndicator(ReorderPdfController controller) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            const CircularProgressIndicator(color: Colors.blue),
-            const SizedBox(height: 20),
-            Obx(
-                  () => Text(
-                controller.processingStatus.value,
-                style: const TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+  // Select Button
+  Widget _buildSelectButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Obx(
+        () => Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.1),
+          child: InkWell(
+            onTap:
+                controller.isProcessing.value || controller.isLoadingPages.value
+                ? null
+                : controller.pickPdfFile,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.teal.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade300, Colors.teal.shade600],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      controller.hasSelectedFile
+                          ? Icons.sync_rounded
+                          : Icons.upload_file_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    controller.hasSelectedFile
+                        ? 'Change PDF File'
+                        : 'Select PDF File',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Content Section
+  Widget _buildContentSection() {
+    return FadeTransition(
+      opacity: _animationController,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            _buildFileInfoCard(),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (controller.isLoadingPages.value) {
+                return _buildLoadingIndicator();
+              }
+              return _buildPagesReorderGrid();
+            }),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (controller.isReorderComplete.value) {
+                return _buildResetButton();
+              } else if (!controller.isLoadingPages.value &&
+                  controller.pageImages.isNotEmpty) {
+                return _buildSaveButton();
+              }
+              return const SizedBox.shrink();
+            }),
+            Obx(
+              () => controller.isProcessing.value
+                  ? _buildProcessingIndicator()
+                  : const SizedBox.shrink(),
+            ),
+            Obx(
+              () => controller.hasProcessedFile
+                  ? _buildResultCard()
+                  : const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPagesReorderGrid(ReorderPdfController controller) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  // File Info Card
+  Widget _buildFileInfoCard() {
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Long Press & Drag to Reorder",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Obx(() {
-                  if (controller.hasReordered &&
-                      !controller.isReorderComplete.value) {
-                    return TextButton.icon(
-                      onPressed: controller.resetOrder,
-                      icon: const Icon(Icons.restore, size: 18),
-                      label: const Text('Reset Order'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Obx(
-                  () => controller.isReorderComplete.value
-                  ? Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  'Processing complete. Press "Reset" to process another PDF',
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf_rounded,
+                    color: Colors.teal.shade700,
+                    size: 20,
                   ),
                 ),
-              )
-                  : const SizedBox(),
-            ),
-            Obx(
-                  () => GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.65,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                const SizedBox(width: 12),
+                const Text(
+                  'Selected File',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-                itemCount: controller.pageOrder.length,
-                itemBuilder: (context, index) {
-                  return _buildDraggablePageCard(index, controller);
-                },
-              ),
+              ],
             ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              Icons.description_rounded,
+              'File Name',
+              controller.selectedFileName,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              Icons.storage_rounded,
+              'File Size',
+              controller.formattedOriginalSize,
+            ),
+            if (controller.totalPages.value > 0) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                Icons.article_rounded,
+                'Total Pages',
+                controller.totalPages.toString(),
+              ),
+            ],
+            if (controller.hasReordered &&
+                !controller.isReorderComplete.value) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.teal.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_rounded,
+                      color: Colors.teal.shade700,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pages have been reordered',
+                        style: TextStyle(
+                          color: Colors.teal.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDraggablePageCard(int index, ReorderPdfController controller) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Loading Indicator
+  Widget _buildLoadingIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(color: Colors.teal),
+          const SizedBox(height: 20),
+          Obx(
+            () => Text(
+              controller.processingStatus.value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Pages Reorder Grid
+  Widget _buildPagesReorderGrid() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Long Press & Drag to Reorder',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Obx(() {
+                if (controller.hasReordered &&
+                    !controller.isReorderComplete.value) {
+                  return TextButton.icon(
+                    onPressed: controller.resetOrder,
+                    icon: const Icon(Icons.restore, size: 18),
+                    label: const Text('Reset'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(
+            () => controller.isReorderComplete.value
+                ? Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Processing complete. Press "Reset" to process another PDF',
+                      style: TextStyle(
+                        color: Colors.teal[700],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : const SizedBox(),
+          ),
+          Obx(
+            () => GridView.builder(
+              shrinkWrap: true,padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.65,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: controller.pageOrder.length,
+              itemBuilder: (context, index) {
+                return _buildDraggablePageCard(index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDraggablePageCard(int index) {
     final originalPageIndex = controller.pageOrder[index];
     final originalPageNumber = originalPageIndex + 1;
     final isDeletionComplete = controller.isReorderComplete.value;
@@ -325,7 +528,6 @@ class _ReorderPdfState extends State<ReorderPdf> {
         originalPageIndex,
         originalPageNumber,
         isDeletionComplete,
-        controller,
       );
     }
 
@@ -333,7 +535,7 @@ class _ReorderPdfState extends State<ReorderPdf> {
       data: index,
       feedback: Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Opacity(
           opacity: 0.8,
           child: SizedBox(
@@ -344,7 +546,6 @@ class _ReorderPdfState extends State<ReorderPdf> {
               originalPageIndex,
               originalPageNumber,
               false,
-              controller,
               isDragging: true,
             ),
           ),
@@ -357,7 +558,6 @@ class _ReorderPdfState extends State<ReorderPdf> {
           originalPageIndex,
           originalPageNumber,
           false,
-          controller,
         ),
       ),
       child: DragTarget<int>(
@@ -371,7 +571,6 @@ class _ReorderPdfState extends State<ReorderPdf> {
             originalPageIndex,
             originalPageNumber,
             false,
-            controller,
             isHovering: candidateData.isNotEmpty,
           );
         },
@@ -380,31 +579,32 @@ class _ReorderPdfState extends State<ReorderPdf> {
   }
 
   Widget _buildPageCard(
-      int index,
-      int originalPageIndex,
-      int originalPageNumber,
-      bool isDeletionComplete,
-      ReorderPdfController controller, {
-        bool isHovering = false,
-        bool isDragging = false,
-      }) {
+    int index,
+    int originalPageIndex,
+    int originalPageNumber,
+    bool isDeletionComplete, {
+    bool isHovering = false,
+    bool isDragging = false,
+  }) {
     return GestureDetector(
       onTap: () => controller.viewSinglePage(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isHovering
-                ? Colors.blue
-                : Colors.blue.withOpacity(0.3),
+                ? Colors.teal.shade600
+                : Colors.teal.withValues(alpha: 0.3),
             width: isHovering ? 2.5 : 1.5,
           ),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isHovering ? 0.2 : 0.1),
-              blurRadius: isHovering ? 8 : 4,
+              color: isHovering
+                  ? Colors.teal.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.05),
+              blurRadius: isHovering ? 8 : 2,
               offset: const Offset(0, 2),
             ),
           ],
@@ -412,7 +612,7 @@ class _ReorderPdfState extends State<ReorderPdf> {
         child: Stack(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(11),
               child: Column(
                 children: [
                   Expanded(
@@ -420,32 +620,36 @@ class _ReorderPdfState extends State<ReorderPdf> {
                       color: Colors.grey[100],
                       child: controller.pageImages[originalPageIndex] != null
                           ? Stack(
-                        children: [
-                          Image.memory(
-                            controller.pageImages[originalPageIndex]!,
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                          ),
-                          if (isDeletionComplete)
-                            Container(
-                              color: Colors.black.withOpacity(0.1),
-                            ),
-                        ],
-                      )
+                              children: [
+                                Image.memory(
+                                  controller.pageImages[originalPageIndex]!,
+                                  fit: BoxFit.contain,
+                                  width: double.infinity,
+                                ),
+                                if (isDeletionComplete)
+                                  Container(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                  ),
+                              ],
+                            )
                           : const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                      horizontal: 12,
                       vertical: 6,
                     ),
                     width: double.infinity,
-                    color: Colors.blue[50],
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(11),
+                        bottomRight: Radius.circular(11),
+                      ),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -454,7 +658,7 @@ class _ReorderPdfState extends State<ReorderPdf> {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 10,
-                            color: Colors.blue[700],
+                            color: Colors.teal[700],
                           ),
                         ),
                         Text(
@@ -478,11 +682,11 @@ class _ReorderPdfState extends State<ReorderPdf> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Colors.teal.shade600,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 3,
                       ),
                     ],
@@ -505,16 +709,12 @@ class _ReorderPdfState extends State<ReorderPdf> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 3,
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.lock,
-                    color: Colors.white,
-                    size: 14,
-                  ),
+                  child: const Icon(Icons.lock, color: Colors.white, size: 14),
                 ),
               ),
           ],
@@ -523,137 +723,94 @@ class _ReorderPdfState extends State<ReorderPdf> {
     );
   }
 
-  Widget _buildSaveButton(ReorderPdfController controller) {
-    return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.isProcessing.value || !controller.hasReordered
-            ? null
-            : controller.savePdfWithNewOrder,
-        icon: controller.isProcessing.value
-            ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
-            : const Icon(Icons.save, size: 24),
-        label: Text(
-          controller.isProcessing.value
-              ? 'Saving PDF...'
-              : 'Save Reordered PDF',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResetButton(ReorderPdfController controller) {
-    return ElevatedButton.icon(
-      onPressed: controller.resetForNewFile,
-      icon: const Icon(Icons.refresh, size: 24),
-      label: const Text(
-        'Reset & Process Another PDF',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildProcessingIndicator(ReorderPdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30),
+  // Save Button
+  Widget _buildSaveButton() {
+    return Container(width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Obx(
-            () => Center(
-          child: Column(
-            children: [
-              Text(
-                controller.processingStatus.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please wait, this may take a while...',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard(ReorderPdfController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Obx(
-            () => Card(
-          elevation: 4,
-          color: Colors.green[50],
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green[700],
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "Pages Reordered Successfully!",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.green,
+        () => Material(
+          color: controller.isProcessing.value
+              ? Colors.grey.shade300
+              : Colors.teal.shade600,
+          borderRadius: BorderRadius.circular(16),
+          elevation: controller.isProcessing.value ? 0 : 4,
+          shadowColor: Colors.teal.withValues(alpha: 0.3),
+          child: InkWell(
+            onTap: controller.isProcessing.value || !controller.hasReordered
+                ? null
+                : controller.savePdfWithNewOrder,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (controller.isProcessing.value)
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
+                    )
+                  else
+                    const Icon(
+                      Icons.save_rounded,
+                      color: Colors.white,
+                      size: 26,
                     ),
-                  ],
-                ),
-                const Divider(height: 24),
-                _buildInfoRow('Output File', controller.processedFileName),
-                const SizedBox(height: 12),
-                _buildInfoRow('Total Pages', controller.totalPages.toString()),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(6),
+                  const SizedBox(width: 12),
+                  Text(
+                    controller.isProcessing.value
+                        ? 'Saving PDF...'
+                        : 'Save Reordered PDF',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: controller.isProcessing.value
+                          ? Colors.grey.shade600
+                          : Colors.white,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Saved Location:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.processedFilePath,
-                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                      ),
-                    ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Reset Button
+  Widget _buildResetButton() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Material(
+        color: Colors.teal.shade600,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 4,
+        shadowColor: Colors.teal.withValues(alpha: 0.3),
+        child: InkWell(
+          onTap: controller.resetForNewFile,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.refresh, color: Colors.white, size: 26),
+                const SizedBox(width: 12),
+                const Text(
+                  'Reset & Process Another',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -664,46 +821,313 @@ class _ReorderPdfState extends State<ReorderPdf> {
     );
   }
 
-  Widget _buildEmptyState() {
+  // Processing Indicator
+  Widget _buildProcessingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(top: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.upload_file, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              'No PDF selected',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Click "Select PDF File" to begin',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Container(width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: Obx(
+          () => Column(
+            children: [
+              const CircularProgressIndicator(color: Colors.teal),
+              const SizedBox(height: 16),
+              Text(
+                controller.processingStatus.value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait, this may take a while...',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 140,
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+  // Result Card
+  Widget _buildResultCard() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Obx(
+        () => Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.teal.shade50, Colors.teal.shade50],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.teal.shade200, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.teal.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.teal.shade600,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Pages Reordered Successfully!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildResultInfoCard(
+                Icons.description_rounded,
+                'Output File',
+                controller.processedFileName,
+              ),
+              const SizedBox(height: 10),
+              _buildResultInfoCard(
+                Icons.article_rounded,
+                'Total Pages',
+                controller.totalPages.toString(),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.folder_rounded,
+                          size: 18,
+                          color: Colors.grey[700],
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Saved Location:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      controller.processedFilePath,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
+      ),
+    );
+  }
+
+  Widget _buildResultInfoCard(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Page View Dialog
+  Widget _buildPageViewDialog(
+    BuildContext context,
+    ReorderPdfController controller,
+  ) {
+    final pageIndex = controller.viewingPageIndex.value;
+    final originalPageIndex = controller.pageOrder[pageIndex];
+    final pageNumber = originalPageIndex + 1;
+
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.teal.shade400, Colors.teal.shade600],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Page $pageNumber (Position ${pageIndex + 1})',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: controller.closeSinglePageView,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            color: Colors.grey[200],
+            child:
+                controller.pageImages.isNotEmpty &&
+                    originalPageIndex < controller.pageImages.length &&
+                    controller.pageImages[originalPageIndex] != null
+                ? Center(
+                    child: Image.memory(
+                      controller.pageImages[originalPageIndex]!,
+                      fit: BoxFit.contain,
+                    ),
+                  )
+                : const Center(child: CircularProgressIndicator()),
+          ),
+        ),
       ],
+    );
+  }
+
+  // Empty State
+  Widget _buildEmptyState() {
+    return FadeTransition(
+      opacity: _animationController,
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.upload_file_rounded,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No PDF Selected',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a PDF file to reorder pages',
+              style: TextStyle(fontSize: 15, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

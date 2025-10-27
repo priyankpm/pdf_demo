@@ -1,0 +1,1 @@
+enum EmotionType { none, happy, sad,}
