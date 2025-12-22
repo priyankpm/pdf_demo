@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pdf_demo/view/add-page-number/add_page_number.dart';
+import 'package:pdf_demo/view/add-watermark/add_watermark.dart';
 import 'package:pdf_demo/view/compress-pdf/compress_pdf.dart';
 import 'package:pdf_demo/view/convert-text-pdf/convert_text_pdf.dart';
 import 'package:pdf_demo/view/delete-pdf/delete_pdf.dart';
@@ -142,6 +144,18 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         'desc': 'Copy text',
         'onTap': () => Get.to(() => const ExtractText()),
       },
+      {
+        'icon': Icons.format_list_numbered_rounded,
+        'name': 'Page Numbers',
+        'desc': 'Add numbering',
+        'onTap': () => Get.to(() => const AddPageNumber()),
+      },
+      {
+        'icon': Icons.water_drop_outlined,
+        'name': 'Watermark',
+        'desc': 'Protect document',
+        'onTap': () => Get.to(() => const AddWatermark()),
+      },
     ];
 
     return Scaffold(
@@ -223,7 +237,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 1.5,
+                            childAspectRatio: 1.4,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
                           ),
@@ -348,7 +362,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '15 Tools',
+                          '17 Tools',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

@@ -18,6 +18,18 @@ class ViewPdfController extends GetxController {
   final pdfViewerKey = GlobalKey<SfPdfViewerState>();
   Timer? _zoomLevelTimer;
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Check if a file was passed as argument
+    if (Get.arguments != null && Get.arguments is File) {
+      selectedFile.value = Get.arguments as File;
+      currentPage.value = 1;
+      totalPages.value = 0;
+      zoomLevel.value = 1.0;
+    }
+  }
+
   /// Pick PDF from file manager and open in viewer
   Future<void> pickAndOpenPdf() async {
     try {

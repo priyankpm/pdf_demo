@@ -81,10 +81,10 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                           controller.selectedFile.value!,
                           key: controller.pdfViewerKey,
                           controller: controller.pdfController,
-                          onPageChanged: (details) =>
-                              controller.updatePageNumber(details.newPageNumber),
-                          onDocumentLoaded: (details) =>
-                              controller.updateTotalPages(details.document.pages.count),
+                          onPageChanged: (details) => controller
+                              .updatePageNumber(details.newPageNumber),
+                          onDocumentLoaded: (details) => controller
+                              .updateTotalPages(details.document.pages.count),
                         ),
                       ),
                     ),
@@ -234,35 +234,35 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   onPressed: () => Get.back(),
                   tooltip: 'Back',
                 ),
               ),
-              const SizedBox(width: 12),
-              const Icon(Icons.picture_as_pdf, color: Colors.white, size: 22),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'PDF Viewer',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+
+              Row(
+                children: [
+                  const Icon(
+                    Icons.picture_as_pdf,
                     color: Colors.white,
+                    size: 22,
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'PDF Viewer',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 22),
-                  onPressed: controller.closeViewer,
-                  tooltip: 'Close PDF',
-                ),
-              ),
+              IconButton(icon: SizedBox(), onPressed: null),
             ],
           ),
         ),
@@ -487,7 +487,10 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Colors.teal.shade400, Colors.teal.shade600],
@@ -581,7 +584,9 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
               Text(
                 label,
                 style: TextStyle(
-                  color: isDisabled ? Colors.grey.shade400 : Colors.teal.shade700,
+                  color: isDisabled
+                      ? Colors.grey.shade400
+                      : Colors.teal.shade700,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -637,10 +642,7 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
               const SizedBox(width: 4),
               Text(
                 '/ ${controller.totalPages.value}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
           ),
@@ -699,11 +701,11 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                       gradient: isMaxZoom
                           ? null
                           : LinearGradient(
-                        colors: [
-                          Colors.teal.shade400,
-                          Colors.teal.shade600,
-                        ],
-                      ),
+                              colors: [
+                                Colors.teal.shade400,
+                                Colors.teal.shade600,
+                              ],
+                            ),
                       color: isMaxZoom ? Colors.grey.shade300 : null,
                     ),
                     child: Icon(
@@ -714,11 +716,7 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              Container(
-                width: 50,
-                height: 1,
-                color: Colors.grey.shade300,
-              ),
+              Container(width: 50, height: 1, color: Colors.grey.shade300),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
@@ -730,11 +728,7 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              Container(
-                width: 50,
-                height: 1,
-                color: Colors.grey.shade300,
-              ),
+              Container(width: 50, height: 1, color: Colors.grey.shade300),
               Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -754,11 +748,11 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
                       gradient: isMinZoom
                           ? null
                           : LinearGradient(
-                        colors: [
-                          Colors.teal.shade400,
-                          Colors.teal.shade600,
-                        ],
-                      ),
+                              colors: [
+                                Colors.teal.shade400,
+                                Colors.teal.shade600,
+                              ],
+                            ),
                       color: isMinZoom ? Colors.grey.shade300 : null,
                     ),
                     child: Icon(
@@ -792,10 +786,7 @@ class _ViewPdfState extends State<ViewPdf> with SingleTickerProviderStateMixin {
             builder: (context, value, child) {
               return Transform.scale(
                 scale: value,
-                child: Opacity(
-                  opacity: value,
-                  child: child,
-                ),
+                child: Opacity(opacity: value, child: child),
               );
             },
             child: Container(
